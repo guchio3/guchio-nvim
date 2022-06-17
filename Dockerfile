@@ -10,19 +10,28 @@ RUN apt update && apt upgrade -y && \
     apt update && \
     apt install -y neovim
 
+# update repo
+RUN add-apt-repository ppa:longsleep/golang-backports
+RUN apt update
+
 # 最低限必要なパッケージ
 RUN apt install -y \
     curl \
     gcc \
     git \
+    wget \
     libxml2-dev \
     libxslt-dev \
     musl-dev\
     python3-dev \
     python3-pip \
     ripgrep \
+    golang \
     nodejs \
     npm \
+    && \
+    apt install -y \
+    python-is-python3 \
     && \
     npm install n -g \
     && \
@@ -32,15 +41,29 @@ RUN apt install -y \
     && \
     rm -rf /var/cache/apt/*
 
-RUN pip3 install --upgrade pip msgpack pynvim isort black flake8 mypy
-
 # install dein.vim
 COPY nvim /root/.config/nvim
 RUN curl https://raw.githubusercontent.com/Shougo/dein.vim/master/bin/installer.sh > installer.sh \
     && \
     sh ./installer.sh ~/.config/nvim
 
+# install plugins
 RUN nvim +:UpdateRemotePlugins +qa
+
+# install coc extensions
+RUN nvim +'CocInstall -sync coc-json coc-sql coc-docker coc-pyright coc-go coc-git coc-json coc-yaml | qa'
+
+# python env
+RUN pip3 install --upgrade pip msgpack pynvim isort black flake8 mypy
+
+# go env
+# ENV PATH=$PATH:$GOROOT/bin
+# RUN go install golang.org/x/tools/gopls@latest
+
+# docker env
+RUN npm install -g dockerfile-language-server-nodejs
+
+# chmod
 RUN chmod -R 777 /root
 
 ENTRYPOINT ["nvim"]

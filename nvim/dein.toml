@@ -191,6 +191,18 @@ build = '''
   git checkout release
 '''
 hook_add = '''
+" coc extensions
+" let g:coc_global_extensions = [
+"     \ 'coc-json',
+"     \ 'coc-sql',
+"     \ 'coc-docker',
+"     \ 'coc-pyright',
+"     \ 'coc-go',
+"     \ 'coc-git',
+"     \ 'coc-json',
+"     \ 'coc-yaml',
+"     \ ]
+
 "LightLineにcoc.nvimのステータスを載せます
 set noshowmode
 let g:lightline = {
