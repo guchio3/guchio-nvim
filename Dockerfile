@@ -57,8 +57,8 @@ RUN nvim +'CocInstall -sync coc-json coc-sql coc-docker coc-pyright coc-go coc-g
 RUN pip3 install --upgrade pip msgpack pynvim isort black flake8 mypy
 
 # go env
-# ENV PATH=$PATH:$GOROOT/bin
-# RUN go install golang.org/x/tools/gopls@latest
+RUN go install golang.org/x/tools/gopls@latest
+ENV PATH=$PATH:/root/go/bin
 
 # docker env
 RUN npm install -g dockerfile-language-server-nodejs
