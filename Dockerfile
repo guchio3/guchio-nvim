@@ -51,7 +51,7 @@ RUN curl https://raw.githubusercontent.com/Shougo/dein.vim/master/bin/installer.
 RUN nvim +:UpdateRemotePlugins +qa
 
 # install coc extensions
-RUN nvim +'CocInstall -sync coc-json coc-sql coc-docker coc-pyright coc-go coc-git coc-json coc-yaml | qa'
+RUN nvim +'CocInstall -sync coc-json coc-sql coc-docker coc-pyright coc-go coc-git coc-json coc-yaml coc-snippets | qa'
 
 # python env
 RUN pip3 install --upgrade pip msgpack pynvim isort black flake8 mypy
@@ -62,6 +62,9 @@ ENV PATH=$PATH:/root/go/bin
 
 # docker env
 RUN npm install -g dockerfile-language-server-nodejs
+
+# coc-snippet setting
+COPY nvim/coc/ultisnips /root/.config/coc/ultisnips
 
 # chmod
 RUN chmod -R 777 /root
