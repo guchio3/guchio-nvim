@@ -64,7 +64,7 @@ ENV PATH=$PATH:/root/go/bin
 RUN npm install -g dockerfile-language-server-nodejs
 
 # coc-snippet setting
-COPY nvim/coc/ultisnips /root/.config/coc/ultisnips
+# COPY nvim/coc/ultisnips /root/.config/coc/ultisnips
 
 # chmod
 RUN chmod -R 777 /root
