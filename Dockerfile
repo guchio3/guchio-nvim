@@ -43,9 +43,6 @@ RUN apt install -y \
 
 # install dein.vim
 COPY nvim /root/.config/nvim
-RUN curl https://raw.githubusercontent.com/Shougo/dein.vim/master/bin/installer.sh > installer.sh \
-    && \
-    sh ./installer.sh ~/.config/nvim
 
 # install plugins
 RUN nvim +:UpdateRemotePlugins +qa
@@ -54,7 +51,7 @@ RUN nvim +:UpdateRemotePlugins +qa
 RUN nvim +'CocInstall -sync coc-json coc-sql coc-docker coc-pyright coc-go coc-git coc-json coc-yaml coc-snippets | qa'
 
 # python env
-RUN pip3 install --upgrade pip msgpack pynvim isort black flake8 mypy
+RUN pip3 install --upgrade setuptools pip msgpack pynvim isort black flake8 mypy
 
 # go env
 RUN go install golang.org/x/tools/gopls@latest
