@@ -1,0 +1,13 @@
+ERR 2025-08-13T21:54:05.868 nvim.7.0   decor_provider_error:36: Error in decoration provider "line" (ns=nvim.treesitter.highlighter):
+Error executing lua: vim/loader.lua:0: EACCES: permission denied: /root/.cache/nvim/luac/%2fusr%2fshare%2fnvim%2fruntime%2flua%2fvim%2fhl.luac
+stack traceback:
+	[C]: in function 'assert'
+	vim/loader.lua: in function ''
+	vim/loader.lua: in function 'loadfile'
+	vim/loader.lua: in function <vim/loader.lua:0>
+	[C]: in function 'require'
+	vim/_init_packages.lua: in function '__index'
+	/usr/share/nvim/runtime/lua/vim/treesitter/highlighter.lua:355: in function 'fn'
+	/usr/share/nvim/runtime/lua/vim/treesitter/highlighter.lua:227: in function 'for_each_highlight_state'
+	/usr/share/nvim/runtime/lua/vim/treesitter/highlighter.lua:316: in function 'on_line_impl'
+	/usr/share/nvim/runtime/lua/vim/treesitter/highlighter.lua:404: in function </usr/share/nvim/runtime/lua/vim/treesitter/highlighter.lua:398>
