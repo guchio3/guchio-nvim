@@ -108,3 +108,4 @@ RUN mkdir -p /root/.local/state/nvim/shada && \
     chmod 755 /root
 
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
+
