@@ -146,31 +146,22 @@ return {
         icons = {
           show = {
             file = false,
-            folder = true,
-            folder_arrow = true,
-            git = true,
+            folder = false,  -- フォルダアイコンも非表示
+            folder_arrow = true,  -- 矢印だけ表示
+            git = false,  -- Gitアイコンを非表示
           },
           glyphs = {
             default = "",
             symlink = "@",
             folder = {
-              arrow_closed = ">",
-              arrow_open = "v",
-              default = "[D]",
-              open = "[D]",
-              empty = "[D]",
-              empty_open = "[D]",
-              symlink = "[D@]",
-              symlink_open = "[D@]",
-            },
-            git = {
-              unstaged = "M",
-              staged = "S",
-              unmerged = "U",
-              renamed = "R",
-              untracked = "?",
-              deleted = "D",
-              ignored = "I",
+              arrow_closed = "▸",
+              arrow_open = "▾",
+              default = "",  -- フォルダ自体のアイコンは空
+              open = "",
+              empty = "",
+              empty_open = "",
+              symlink = "",
+              symlink_open = "",
             },
           },
         },

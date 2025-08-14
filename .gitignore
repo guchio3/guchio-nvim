@@ -1,0 +1,14 @@
+# Neovim
+.nvimlog
+*.swp
+*.swo
+*~
+.netrwhist
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/

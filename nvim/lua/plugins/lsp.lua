@@ -17,10 +17,10 @@ return {
     opts = {
       ensure_installed = {
         "lua_ls",        -- Lua
-        "pyright",       -- Python (既存のcoc-pyrightから移行)
-        "ruff",          -- Python linter (ruff_lspからruffに変更)
+        "pyright",       -- Python
+        "ruff",          -- Python linter
         "gopls",         -- Go
-        "ts_ls",         -- TypeScript/JavaScript (tsserverからts_lsに変更)
+        "ts_ls",         -- TypeScript/JavaScript
         "rust_analyzer", -- Rust
         "dockerls",      -- Docker
         "yamlls",        -- YAML
@@ -146,6 +146,16 @@ return {
                 },
               },
             })
+          elseif server_name == "ruff" then
+            lspconfig.ruff.setup({
+              capabilities = capabilities,
+              on_attach = on_attach,
+            })
+          elseif server_name == "ts_ls" then
+            lspconfig.ts_ls.setup({
+              capabilities = capabilities,
+              on_attach = on_attach,
+            })
           else
             -- デフォルト設定
             if lspconfig[server_name] then
@@ -220,6 +230,20 @@ return {
                 staticcheck = true,
               },
             },
+          })
+        end,
+        
+        ["ruff"] = function()
+          lspconfig.ruff.setup({
+            capabilities = capabilities,
+            on_attach = on_attach,
+          })
+        end,
+        
+        ["ts_ls"] = function()
+          lspconfig.ts_ls.setup({
+            capabilities = capabilities,
+            on_attach = on_attach,
           })
         end,
       })
