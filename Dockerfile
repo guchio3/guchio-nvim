@@ -21,7 +21,7 @@ RUN apt-get update && \
         # Base tools
         locales ca-certificates curl git wget \
         # Build tools
-        gcc g++ make build-essential \
+        gcc build-essential \
         libxml2-dev libxslt-dev musl-dev \
         # Python
         python3-dev python3-pip python3-venv python-is-python3 \
@@ -48,7 +48,6 @@ FROM system-deps AS lang-tools
 # Upgrade Node.js
 RUN npm install -g n && \
     n stable && \
-    hash -r && \
     npm install -g dockerfile-language-server-nodejs && \
     # Clean up old node
     apt-get purge -y nodejs npm && \
@@ -77,10 +76,11 @@ RUN chmod +x /usr/local/bin/entrypoint.sh
 # Copy Neovim config
 COPY nvim /root/.config/nvim
 
-# Create necessary directories
+# Create necessary directories with proper permissions
 RUN mkdir -p /root/.local/state/nvim/shada \
              /root/.local/share/nvim \
-             /root/.cache/nvim && \
+             /root/.cache/nvim \
+             /root/.cache/nvim/luac && \
     touch /root/.local/share/nvim/telescope_history && \
     chmod -R 755 /root/.config && \
     chmod -R 777 /root/.cache /root/.local/state /root/.local/share && \
@@ -88,16 +88,17 @@ RUN mkdir -p /root/.local/state/nvim/shada \
 
 # Install all Neovim plugins in one go
 ENV DOCKER_BUILD=1
-RUN nvim --headless "+Lazy! sync" +qa 2>/dev/null || true && \
-    nvim --headless -c "TSUpdateSync" +qa 2>/dev/null || true && \
+RUN nvim --headless "+Lazy! sync" +qa || true && \
+    nvim --headless -c "TSUpdateSync" +qa || true && \
     nvim --headless \
         -c "MasonInstall lua-language-server pyright gopls rust-analyzer typescript-language-server" \
         -c "MasonInstall dockerfile-language-server yaml-language-server json-lsp bash-language-server ruff" \
         -c "MasonInstall gofumpt golangci-lint prettier stylua shellcheck shfmt" \
-        +qa 2>/dev/null || true && \
-    # Clear build-time environment variable
-    true
+        +qa 2>/dev/null || true
 ENV DOCKER_BUILD=
+
+# Fix ShaDa file permissions
+RUN chmod -R 777 /root/.local/state/nvim/shada 2>/dev/null || true
 
 # Final cleanup
 RUN rm -rf /tmp/* /var/tmp/* ~/.cache/pip
