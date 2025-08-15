@@ -1,7 +1,7 @@
 -- Neovim configuration (2025 modernized version)
 -- Bootstrap lazy.nvim and basic settings
 
--- Leader key設定（既存設定から引き継ぎ）
+-- Leader key設定
 vim.g.mapleader = ","
 vim.g.maplocalleader = ","
 
@@ -10,7 +10,7 @@ if vim.loader then
   vim.loader.enable()
 end
 
--- 基本設定（元の設定から移植）
+-- 基本設定
 vim.opt.encoding = "utf-8"
 vim.opt.fileencoding = "utf-8"
 vim.opt.fileencodings = { "iso-2022-jp", "euc-jp", "sjis", "utf-8" }
@@ -39,7 +39,7 @@ vim.opt.cursorline = true
 vim.opt.termguicolors = true
 vim.opt.background = "dark"
 
--- Tab系（元の設定は tabstop=4, shiftwidth=4）
+-- Tab系
 vim.opt.list = true
 vim.opt.listchars = { tab = "▸-" }
 vim.opt.expandtab = true
@@ -53,7 +53,7 @@ vim.opt.clipboard = "unnamedplus"
 -- ファイル保存時に末尾に改行を追加（POSIX準拠）
 vim.opt.fixeol = true  -- ファイル末尾に改行がなければ追加
 
--- 検索設定（元の設定から移植）
+-- 検索設定
 vim.opt.ignorecase = true
 vim.opt.smartcase = true
 vim.opt.incsearch = true
@@ -108,18 +108,10 @@ require("lazy").setup({
   },
 })
 
--- カラースキーム設定（プラグインロード後）
--- 利用可能なテーマ: hybrid, tokyonight, catppuccin, gruvbox, kanagawa
--- vim.cmd.colorscheme("hybrid")
--- vim.cmd.colorscheme("tokyonight-night")  -- tokyonight-storm, tokyonight-moon, tokyonight-day
--- vim.cmd.colorscheme("catppuccin")  -- catppuccin-latte, catppuccin-frappe, catppuccin-macchiato, catppuccin-mocha
--- vim.cmd.colorscheme("gruvbox")
--- vim.cmd.colorscheme("kanagawa")  -- kanagawa-wave, kanagawa-dragon, kanagawa-lotus
-
--- デフォルトはhybridを使用
+-- カラースキーム設定
 vim.cmd.colorscheme("hybrid")
 
--- guchio shortcuts (元の設定から移植)
+-- guchio shortcuts
 -- 保存
 vim.keymap.set("n", ",w", ":w<CR>", { noremap = true })
 -- quit
@@ -162,7 +154,7 @@ end, {})
 
 vim.keymap.set("n", ",t", ":ThemeSelect<CR>", { noremap = true, desc = "Select color theme" })
 
--- 移動系（元の設定から移植）
+-- 移動系
 -- 折り返し時に表示行単位での移動
 vim.keymap.set("n", "j", "gj", { noremap = true })
 vim.keymap.set("n", "k", "gk", { noremap = true })

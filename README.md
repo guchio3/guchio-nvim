@@ -29,7 +29,15 @@ docker run --rm -it -u $(id -u):$(id -g) -e HOME=/root -v $HOME:$HOME --workdir=
 Add to your shell configuration (`.bashrc`, `.zshrc`, etc.):
 
 ```bash
-alias nvim='docker run --rm -it -u $(id -u):$(id -g) -e HOME=/root -v $HOME:$HOME --workdir=$(pwd) nvim'
+# nvim Docker wrapper function (with file completion)
+nvim() {
+    docker run --rm -it \
+        -u $(id -u):$(id -g) \
+        -e HOME=/root \
+        -v $HOME:$HOME \
+        --workdir=$(pwd) \
+        nvim "$@"
+}
 ```
 
 ## Key Mappings
@@ -91,9 +99,3 @@ To update LSP servers and tools:
 :Mason
 :MasonUpdate
 ```
-
-## Migration from old version
-
-Old configuration files are backed up as:
-- `nvim/init.vim.bak`
-- `nvim/coc-settings.json.bak`

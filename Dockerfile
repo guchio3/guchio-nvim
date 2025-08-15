@@ -72,15 +72,14 @@ RUN nvim --headless -c "lua print('Treesitter parsers: ' .. #require('nvim-trees
 ENV DOCKER_BUILD=
 
 # Mason でLSPサーバーとツールをインストール
-# LSPサーバーとツールを一括インストール（効率化）
 RUN nvim --headless \
   -c "MasonInstall lua-language-server pyright gopls rust-analyzer typescript-language-server" \
   -c "MasonInstall dockerfile-language-server yaml-language-server json-lsp bash-language-server ruff" \
-  -c "MasonInstall black isort mypy gofumpt golangci-lint prettier stylua shellcheck shfmt" \
+  -c "MasonInstall gofumpt golangci-lint prettier stylua shellcheck shfmt" \
   +qa 2>/dev/null || true
 
 # python env (uv を使用、システムパッケージの保護を無視)
-RUN uv pip install --system --break-system-packages msgpack pynvim isort black flake8 mypy ruff
+RUN uv pip install --system --break-system-packages msgpack pynvim isort black mypy ruff
 
 # go env
 RUN go install golang.org/x/tools/gopls@latest
@@ -102,9 +101,10 @@ RUN chmod +x /usr/local/bin/entrypoint.sh
 # 必要なディレクトリを作成して権限設定
 RUN mkdir -p /root/.local/state/nvim/shada && \
     mkdir -p /root/.local/share/nvim && \
+    mkdir -p /root/.cache/nvim && \
     touch /root/.local/share/nvim/telescope_history && \
     chmod -R 755 /root/.config && \
-    chmod -R 775 /root/.cache /root/.local/state /root/.local/share && \
+    chmod -R 777 /root/.cache /root/.local/state /root/.local/share && \
     chmod 755 /root
 
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]

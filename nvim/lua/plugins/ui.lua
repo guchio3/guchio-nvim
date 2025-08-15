@@ -1,7 +1,13 @@
 -- UI plugins
 
 return {
-  -- ステータスライン（lightlineの代わりにlualineを使用）
+  -- カラースキーム: hybrid
+  {
+    "w0ng/vim-hybrid",
+    lazy = false,
+    priority = 1000,
+  },
+  -- ステータスライン
   {
     "nvim-lualine/lualine.nvim",
     dependencies = { "nvim-tree/nvim-web-devicons" },
@@ -22,13 +28,13 @@ return {
     },
   },
 
-  -- インデントガイド（元の設定と同様、デフォルトで無効）
+  -- インデントガイド
   {
     "lukas-reineke/indent-blankline.nvim",
     main = "ibl",
     event = "VeryLazy",  -- 遅延読み込み
     opts = {
-      enabled = false,  -- デフォルトで無効（元の設定と同じ）
+      enabled = false,  -- デフォルトで無効
     },
     config = function(_, opts)
       require("ibl").setup(opts)
@@ -39,7 +45,7 @@ return {
     end,
   },
 
-  -- ウィンドウリサイズ（既存から引き継ぎ）
+  -- ウィンドウリサイズ
   {
     "simeji/winresizer",
     keys = {
@@ -47,13 +53,13 @@ return {
     },
   },
 
-  -- 括弧の自動補完（既存から引き継ぎ）
+  -- 括弧の自動補完
   {
     "cohama/lexima.vim",
     event = "InsertEnter",
   },
 
-  -- Git操作（既存から引き継ぎ）
+  -- Git操作
   {
     "tpope/vim-fugitive",
     cmd = { "Git", "Gdiffsplit", "Gread", "Gwrite", "Ggrep", "GMove", "GDelete", "GBrowse", "GRemove", "GRename", "Glgrep", "Gedit" },

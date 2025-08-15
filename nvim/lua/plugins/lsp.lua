@@ -41,7 +41,6 @@ return {
       "hrsh7th/cmp-nvim-lsp",
     },
     config = function()
-      local lspconfig = require("lspconfig")
       local capabilities = require("cmp_nvim_lsp").default_capabilities()
       
       -- LspInfoコマンドを作成
@@ -75,7 +74,6 @@ return {
       local on_attach = function(client, bufnr)
         local opts = { noremap = true, silent = true, buffer = bufnr }
         
-        -- 既存のcoc.nvimのキーマップを再現
         vim.keymap.set("n", "K", vim.lsp.buf.hover, opts)
         vim.keymap.set("n", "<C-]>", vim.lsp.buf.definition, opts)
         vim.keymap.set("n", "<C-[>", vim.lsp.buf.references, opts)
@@ -283,7 +281,6 @@ return {
           ["<C-Space>"] = cmp.mapping.complete(),
           ["<C-e>"] = cmp.mapping.abort(),
           ["<CR>"] = cmp.mapping.confirm({ select = false }),
-          -- TabとS-Tabで補完候補を選択（既存のcoc.nvimの動作を再現）
           ["<Tab>"] = cmp.mapping(function(fallback)
             if cmp.visible() then
               cmp.select_next_item()
@@ -355,9 +352,4 @@ return {
     end,
   },
 
-  -- Formatter/Linter管理（Dockerでは事前インストール済みなので、設定のみ）
-  {
-    "WhoIsSethDaniel/mason-tool-installer.nvim",
-    enabled = false,  -- 完全に無効化（Dockerではinstall-tools.shで対応）
-  },
 }
