@@ -119,9 +119,6 @@ require("lazy").setup({
 -- デフォルトはhybridを使用
 vim.cmd.colorscheme("hybrid")
 
--- Mason setup for Docker build (無効化、install-tools.sh で対応)
--- require("config.mason-setup")
-
 -- guchio shortcuts (元の設定から移植)
 -- 保存
 vim.keymap.set("n", ",w", ":w<CR>", { noremap = true })
