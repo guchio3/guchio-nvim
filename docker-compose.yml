@@ -1,0 +1,16 @@
+version: '3.8'
+
+services:
+  nvim:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      cache_from:
+        - guchio-nvim:latest
+    image: guchio-nvim:latest
+    volumes:
+      - .:/workspace
+    working_dir: /workspace
+    stdin_open: true
+    tty: true
+    command: nvim

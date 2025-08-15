@@ -1,111 +1,105 @@
-FROM ubuntu:24.04
+# Optimized Dockerfile with multi-stage builds and better caching
+FROM ubuntu:24.04 AS base
 
-# ロケール設定
-RUN apt-get update && apt-get install -y locales && \
+# Environment setup (rarely changes)
+ENV LANG="en_US.UTF-8" \
+    LANGUAGE="en_US:ja" \
+    LC_ALL="en_US.UTF-8" \
+    DEBIAN_FRONTEND=noninteractive \
+    TZ=Asia/Tokyo \
+    XDG_CONFIG_HOME=/root/.config \
+    XDG_DATA_HOME=/root/.local/share \
+    XDG_STATE_HOME=/root/.local/state \
+    XDG_CACHE_HOME=/root/.cache
+
+# ===== Stage 1: System dependencies (cached well) =====
+FROM base AS system-deps
+
+# Install all system packages in one layer for better caching
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+        # Base tools
+        locales ca-certificates curl git wget \
+        # Build tools
+        gcc g++ make build-essential \
+        libxml2-dev libxslt-dev musl-dev \
+        # Python
+        python3-dev python3-pip python3-venv python-is-python3 \
+        # Languages
+        golang nodejs npm \
+        # Neovim and tools
+        software-properties-common \
+        && \
+    # Add Neovim PPA
+    apt-add-repository -y ppa:neovim-ppa/unstable && \
+    apt-get update && \
+    apt-get install -y --no-install-recommends \
+        neovim ripgrep fd-find \
+        && \
+    # Locale setup
     locale-gen en_US.UTF-8 && \
+    # Cleanup
+    apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
-# マルチバイト文字をまともに扱うための設定
-ENV LANG="en_US.UTF-8" LANGUAGE="en_US:ja" LC_ALL="en_US.UTF-8"
+# ===== Stage 2: Language tools (changes more frequently) =====
+FROM system-deps AS lang-tools
 
-# タイムゾーン設定（非対話的インストール用）
-ENV DEBIAN_FRONTEND=noninteractive
-ENV TZ=Asia/Tokyo
+# Upgrade Node.js
+RUN npm install -g n && \
+    n stable && \
+    hash -r && \
+    npm install -g dockerfile-language-server-nodejs && \
+    # Clean up old node
+    apt-get purge -y nodejs npm && \
+    apt-get autoremove -y && \
+    rm -rf /var/lib/apt/lists/* /root/.npm
 
-# neovim は最新版を install (0.10以上が必要)
-RUN apt update && apt upgrade -y && \
-    apt install -y software-properties-common && \
-    apt-add-repository -y ppa:neovim-ppa/unstable && \
-    apt update && \
-    apt install -y neovim
-
-# 最低限必要なパッケージ
-RUN apt install -y \
-    curl \
-    gcc \
-    git \
-    wget \
-    build-essential \
-    libxml2-dev \
-    libxslt-dev \
-    musl-dev \
-    python3-dev \
-    python3-pip \
-    python3-venv \
-    ripgrep \
-    fd-find \
-    golang \
-    nodejs \
-    npm \
-    && \
-    apt install -y \
-    python-is-python3 \
-    && \
-    npm install n -g \
-    && \
-    n stable \
-    && \
-    apt purge -y nodejs npm \
-    && \
-    rm -rf /var/cache/apt/*
-
-# uv のインストール
+# Install uv for Python
 RUN curl -LsSf https://astral.sh/uv/install.sh | sh
 ENV PATH="/root/.local/bin:$PATH"
 
-# nvim設定をコピー
-COPY nvim /root/.config/nvim
+# Python packages
+RUN uv pip install --system --break-system-packages \
+    msgpack pynvim isort black mypy ruff
 
-# Dockerビルド時の環境変数を設定
-ENV DOCKER_BUILD=1
-
-# lazy.nvimでプラグインをインストール（ヘッドレスモード）
-RUN nvim --headless "+Lazy! sync" +qa || true
-
-# TreesitterのParserをインストール（ensure_installedを使用）
-RUN nvim --headless -c "TSUpdateSync" +qa || true
-
-# インストール確認
-RUN nvim --headless -c "lua print('Treesitter parsers: ' .. #require('nvim-treesitter.info').installed_parsers())" +qa || true
-
-# 環境変数をクリア（実行時には不要）
-ENV DOCKER_BUILD=
-
-# Mason でLSPサーバーとツールをインストール
-RUN nvim --headless \
-  -c "MasonInstall lua-language-server pyright gopls rust-analyzer typescript-language-server" \
-  -c "MasonInstall dockerfile-language-server yaml-language-server json-lsp bash-language-server ruff" \
-  -c "MasonInstall gofumpt golangci-lint prettier stylua shellcheck shfmt" \
-  +qa 2>/dev/null || true
-
-# python env (uv を使用、システムパッケージの保護を無視)
-RUN uv pip install --system --break-system-packages msgpack pynvim isort black mypy ruff
-
-# go env
+# Go tools
 RUN go install golang.org/x/tools/gopls@latest
-ENV PATH=$PATH:/root/go/bin
+ENV PATH="$PATH:/root/go/bin"
 
-# docker env
-RUN npm install -g dockerfile-language-server-nodejs
+# ===== Stage 3: Neovim configuration (changes most frequently) =====
+FROM lang-tools AS nvim-setup
 
-# XDG Base Directory 環境変数設定（Neovim用）
-ENV XDG_CONFIG_HOME=/root/.config
-ENV XDG_DATA_HOME=/root/.local/share
-ENV XDG_STATE_HOME=/root/.local/state
-ENV XDG_CACHE_HOME=/root/.cache
-
-# entrypoint スクリプトをコピー
+# Copy configuration files first (for better cache invalidation)
 COPY entrypoint.sh /usr/local/bin/entrypoint.sh
 RUN chmod +x /usr/local/bin/entrypoint.sh
 
-# 必要なディレクトリを作成して権限設定
-RUN mkdir -p /root/.local/state/nvim/shada && \
-    mkdir -p /root/.local/share/nvim && \
-    mkdir -p /root/.cache/nvim && \
+# Copy Neovim config
+COPY nvim /root/.config/nvim
+
+# Create necessary directories
+RUN mkdir -p /root/.local/state/nvim/shada \
+             /root/.local/share/nvim \
+             /root/.cache/nvim && \
     touch /root/.local/share/nvim/telescope_history && \
     chmod -R 755 /root/.config && \
     chmod -R 777 /root/.cache /root/.local/state /root/.local/share && \
     chmod 755 /root
 
-ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
+# Install all Neovim plugins in one go
+ENV DOCKER_BUILD=1
+RUN nvim --headless "+Lazy! sync" +qa 2>/dev/null || true && \
+    nvim --headless -c "TSUpdateSync" +qa 2>/dev/null || true && \
+    nvim --headless \
+        -c "MasonInstall lua-language-server pyright gopls rust-analyzer typescript-language-server" \
+        -c "MasonInstall dockerfile-language-server yaml-language-server json-lsp bash-language-server ruff" \
+        -c "MasonInstall gofumpt golangci-lint prettier stylua shellcheck shfmt" \
+        +qa 2>/dev/null || true && \
+    # Clear build-time environment variable
+    true
+ENV DOCKER_BUILD=
 
+# Final cleanup
+RUN rm -rf /tmp/* /var/tmp/* ~/.cache/pip
+
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
