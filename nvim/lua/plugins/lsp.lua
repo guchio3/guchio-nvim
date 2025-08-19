@@ -268,12 +268,7 @@ return {
                   basedpyright = { disableOrganizeImports = true },
                 },
               })
-            elseif server == "ruff" then
-              lspconfig.ruff.setup({
-                on_attach = on_attach,
-                capabilities = capabilities,
-                root_dir = util.root_pattern("pyproject.toml", "ruff.toml", ".git"),
-              })
+            -- ruff は setup_handlers で処理済み
             elseif server == "lua_ls" then
               lspconfig.lua_ls.setup({
                 on_attach = on_attach,
@@ -330,11 +325,7 @@ return {
             basedpyright = { disableOrganizeImports = true },
           },
         })
-        lspconfig.ruff.setup({
-          on_attach = on_attach,
-          capabilities = capabilities,
-          root_dir = util.root_pattern("pyproject.toml", "ruff.toml", ".git"),
-        })
+        -- ruff は setup_handlers で処理する（mason-lspconfig がある場合）
       end
     end,
   },

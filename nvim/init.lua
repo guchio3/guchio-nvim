@@ -125,14 +125,7 @@ vim.keymap.set("n", "<C-c><C-c>", ":nohlsearch<CR><Esc>", { noremap = true })
 -- term insert を esc で終了
 vim.keymap.set("t", "<Esc>", "<C-\\><C-n>", { noremap = true })
 
-local function diagnostic_jump(count)
-  vim.diagnostic.jump({
-    count = count,
-    float = true,
-    severity = { min = vim.diagnostic.severity.WARN },
-  })
-end
-_G.diagnostic_jump = diagnostic_jump
+-- diagnostic_jump 関数は削除（LSP側で goto_next/prev を使用）
 
 -- カラーテーマ切り替え機能
 vim.api.nvim_create_user_command("ThemeSelect", function()
