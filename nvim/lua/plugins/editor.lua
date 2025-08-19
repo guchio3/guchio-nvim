@@ -33,8 +33,6 @@ return {
           path_display = { "truncate" },
           mappings = {
             i = {
-              ["<C-n>"] = actions.cycle_history_next,
-              ["<C-p>"] = actions.cycle_history_prev,
               ["<C-j>"] = actions.move_selection_next,
               ["<C-k>"] = actions.move_selection_previous,
               ["<C-c>"] = actions.close,
@@ -133,7 +131,7 @@ return {
       "nvim-tree/nvim-web-devicons",
     },
     keys = {
-      { "<C-n>", "<cmd>NvimTreeToggle<cr>", desc = "Toggle file tree" },
+      { ",e", "<cmd>NvimTreeToggle<cr>", desc = "Toggle file tree" },
       { ",n", "<cmd>NvimTreeFindFile<cr>", desc = "Find current file in tree" },
     },
     opts = {

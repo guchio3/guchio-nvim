@@ -14,74 +14,24 @@ return {
     dependencies = {
       "williamboman/mason.nvim",
     },
-    opts = {
-      ensure_installed = {
-        "lua_ls",        -- Lua
-        "pyright",       -- Python
-        "ruff",          -- Python linter
-        "gopls",         -- Go
-        "ts_ls",         -- TypeScript/JavaScript
-        "rust_analyzer", -- Rust
-        "dockerls",      -- Docker
-        "yamlls",        -- YAML
-        "jsonls",        -- JSON
-        "bashls",        -- Bash
-      },
-      automatic_installation = false,  -- Dockerでは事前インストール済み
-    },
-  },
-
-  -- LSP設定
-  {
-    "neovim/nvim-lspconfig",
-    lazy = false,  -- 遅延ロードを無効にして常にロード
-    dependencies = {
-      "williamboman/mason.nvim",
-      "williamboman/mason-lspconfig.nvim",
-      "hrsh7th/cmp-nvim-lsp",
-    },
     config = function()
       local capabilities = require("cmp_nvim_lsp").default_capabilities()
       
-      -- LspInfoコマンドを作成
-      vim.api.nvim_create_user_command("LspInfo", function()
-        vim.cmd("checkhealth lsp")
-      end, { desc = "Show LSP information" })
-
-      -- 診断表示の設定
-      vim.diagnostic.config({
-        virtual_text = false, -- 仮想テキストは非表示（軽量化）
-        signs = true,
-        underline = true,
-        update_in_insert = false,
-        severity_sort = true,
-        float = {
-          border = "rounded",
-          source = "always",
-          header = "",
-          prefix = "",
-        },
-      })
-      
-      -- 診断サインをより見やすく
-      local signs = { Error = "✗", Warn = "⚠", Hint = "💡", Info = "ℹ" }
-      for type, icon in pairs(signs) do
-        local hl = "DiagnosticSign" .. type
-        vim.fn.sign_define(hl, { text = icon, texthl = hl, numhl = hl })
-      end
-
-      -- LSPキーマップ
+      -- 共通のon_attach関数
       local on_attach = function(client, bufnr)
         local opts = { noremap = true, silent = true, buffer = bufnr }
         
         vim.keymap.set("n", "K", vim.lsp.buf.hover, opts)
+        vim.keymap.set("n", "gd", vim.lsp.buf.definition, opts)
+        vim.keymap.set("n", "gD", vim.lsp.buf.declaration, opts)
+        vim.keymap.set("n", "gr", vim.lsp.buf.references, opts)  -- <C-[>はESCなので変更
         vim.keymap.set("n", "<C-]>", vim.lsp.buf.definition, opts)
-        vim.keymap.set("n", "<C-[>", vim.lsp.buf.references, opts)
         vim.keymap.set("n", ",r", vim.lsp.buf.rename, opts)
-        vim.keymap.set("n", ",a", vim.lsp.buf.format, opts)
-        vim.keymap.set("v", ",a", vim.lsp.buf.format, opts)
-        vim.keymap.set("n", "[d", vim.diagnostic.goto_prev, opts)
-        vim.keymap.set("n", "]d", vim.diagnostic.goto_next, opts)
+        vim.keymap.set({ "n", "v" }, ",a", vim.lsp.buf.format, opts)
+        
+        -- 診断移動はgoto_prev/nextを使用（より安定）
+        vim.keymap.set("n", "<C-p>", function() vim.diagnostic.goto_prev({ wrap = false }) end, opts)
+        vim.keymap.set("n", "<C-n>", function() vim.diagnostic.goto_next({ wrap = false }) end, opts)
         vim.keymap.set("n", ",l", "<cmd>Telescope diagnostics<cr>", opts)
         vim.keymap.set("n", ",d", vim.diagnostic.open_float, opts)
         vim.keymap.set("n", ",o", function() 
@@ -93,18 +43,50 @@ return {
           client.server_capabilities.semanticTokensProvider = nil
         end
       end
-
-      -- LSPサーバーの設定
-      local lspconfig = require("lspconfig")
-      local mason_lspconfig = require("mason-lspconfig")
       
-      -- setup_handlers が存在するか確認
-      if not mason_lspconfig.setup_handlers then
-        -- 古いAPIの場合、手動で設定
-        local installed_servers = mason_lspconfig.get_installed_servers()
-        for _, server_name in ipairs(installed_servers) do
-          if server_name == "lua_ls" then
-            lspconfig.lua_ls.setup({
+      -- Mason-LSPconfigのセットアップ（新しいAPI）
+      require("mason-lspconfig").setup({
+        ensure_installed = {
+          "lua_ls",        -- Lua
+          "ruff",          -- Python linter
+          "gopls",         -- Go
+          "ts_ls",         -- TypeScript/JavaScript
+          "rust_analyzer", -- Rust
+          "dockerls",      -- Docker
+          "yamlls",        -- YAML
+          "jsonls",        -- JSON
+          "bashls",        -- Bash
+        },
+        automatic_installation = false,  -- Dockerでは事前インストール済み
+        
+        -- 新しいAPI: handlersで各LSPサーバーの設定を定義
+        handlers = {
+          -- デフォルトハンドラー（ほとんどのLSPサーバーに適用）
+          function(server_name)
+            require("lspconfig")[server_name].setup({
+              capabilities = capabilities,
+              on_attach = on_attach,
+            })
+          end,
+          
+          -- ruff専用の設定
+          ["ruff"] = function()
+            require("lspconfig").ruff.setup({
+              capabilities = capabilities,
+              on_attach = on_attach,
+              init_options = {
+                settings = {
+                  format = {
+                    args = { "--line-length=120" },
+                  },
+                },
+              },
+            })
+          end,
+          
+          -- lua_ls専用の設定
+          ["lua_ls"] = function()
+            require("lspconfig").lua_ls.setup({
               capabilities = capabilities,
               on_attach = on_attach,
               settings = {
@@ -119,22 +101,11 @@ return {
                 },
               },
             })
-          elseif server_name == "pyright" then
-            lspconfig.pyright.setup({
-              capabilities = capabilities,
-              on_attach = on_attach,
-              settings = {
-                python = {
-                  analysis = {
-                    autoSearchPaths = true,
-                    diagnosticMode = "workspace",
-                    useLibraryCodeForTypes = true,
-                  },
-                },
-              },
-            })
-          elseif server_name == "gopls" then
-            lspconfig.gopls.setup({
+          end,
+          
+          -- gopls専用の設定
+          ["gopls"] = function()
+            require("lspconfig").gopls.setup({
               capabilities = capabilities,
               on_attach = on_attach,
               settings = {
@@ -144,108 +115,72 @@ return {
                 },
               },
             })
-          elseif server_name == "ruff" then
-            lspconfig.ruff.setup({
-              capabilities = capabilities,
-              on_attach = on_attach,
-            })
-          elseif server_name == "ts_ls" then
-            lspconfig.ts_ls.setup({
-              capabilities = capabilities,
-              on_attach = on_attach,
-            })
-          else
-            -- デフォルト設定
-            if lspconfig[server_name] then
-              lspconfig[server_name].setup({
-                capabilities = capabilities,
-                on_attach = on_attach,
-              })
-            end
-          end
-        end
-      else
-        -- 新しいAPIを使用
-        mason_lspconfig.setup_handlers({
-        -- デフォルトハンドラー
-        function(server_name)
-          lspconfig[server_name].setup({
-            capabilities = capabilities,
-            on_attach = on_attach,
-          })
-        end,
-        
-        -- 特定のサーバー用カスタム設定
-        ["lua_ls"] = function()
-          lspconfig.lua_ls.setup({
-            capabilities = capabilities,
-            on_attach = on_attach,
-            settings = {
-              Lua = {
-                runtime = {
-                  version = "LuaJIT",
-                },
-                diagnostics = {
-                  globals = { "vim" },
-                },
-                workspace = {
-                  library = vim.api.nvim_get_runtime_file("", true),
-                  checkThirdParty = false,
-                },
-                telemetry = {
-                  enable = false,
-                },
-              },
-            },
-          })
-        end,
-        
-        ["pyright"] = function()
-          lspconfig.pyright.setup({
-            capabilities = capabilities,
-            on_attach = on_attach,
-            settings = {
-              python = {
-                analysis = {
-                  autoSearchPaths = true,
-                  diagnosticMode = "workspace",
-                  useLibraryCodeForTypes = true,
-                },
-              },
-            },
-          })
-        end,
-        
-        ["gopls"] = function()
-          lspconfig.gopls.setup({
-            capabilities = capabilities,
-            on_attach = on_attach,
-            settings = {
-              gopls = {
-                analyses = {
-                  unusedparams = true,
-                },
-                staticcheck = true,
-              },
-            },
-          })
-        end,
-        
-        ["ruff"] = function()
-          lspconfig.ruff.setup({
-            capabilities = capabilities,
-            on_attach = on_attach,
-          })
-        end,
-        
-        ["ts_ls"] = function()
-          lspconfig.ts_ls.setup({
-            capabilities = capabilities,
-            on_attach = on_attach,
-          })
+          end,
+        }
+      })
+    end,
+  },
+
+  -- LSP設定（診断表示のカスタマイズ）
+  {
+    "neovim/nvim-lspconfig",
+    lazy = false,
+    config = function()
+      -- LspHealthコマンドを作成（LspInfoは上書きしない）
+      vim.api.nvim_create_user_command("LspHealth", function()
+        vim.cmd("checkhealth lsp")
+      end, { desc = "Show LSP health check" })
+
+      -- 診断表示の設定（サインは完全に無効化）
+      vim.diagnostic.config({
+        virtual_text = false, -- 仮想テキストは非表示
+        signs = false,        -- サインを完全に無効化
+        underline = true,     -- 問題のあるコードに下線を引く
+        update_in_insert = false,
+        severity_sort = true,
+        float = {
+          border = "rounded",
+          source = "always",
+          header = "",
+          prefix = "",
+          focusable = false,
+          style = "minimal",
+          format = function(diagnostic)
+            return diagnostic.message
+          end,
+        },
+      })
+      
+      -- colorschemeが変わっても診断ハイライトを維持
+      vim.api.nvim_create_autocmd("ColorScheme", {
+        group = vim.api.nvim_create_augroup("MyDiagnosticHL", { clear = true }),
+        callback = function()
+          vim.api.nvim_set_hl(0, "DiagnosticUnderlineError", { undercurl = true, sp = "#ff0000", bg = "#3d0000" })
+          vim.api.nvim_set_hl(0, "DiagnosticUnderlineWarn",  { undercurl = true, sp = "#ffaa00", bg = "#3d2800" })
+          vim.api.nvim_set_hl(0, "DiagnosticUnderlineInfo",  { undercurl = true, sp = "#00ffff", bg = "#003d3d" })
+          vim.api.nvim_set_hl(0, "DiagnosticUnderlineHint",  { undercurl = true, sp = "#00ff00", bg = "#003d00" })
         end,
       })
-      end
+      -- 起動直後にも適用
+      vim.cmd("doautocmd ColorScheme")
+      
+      -- カーソル位置の診断を自動表示
+      vim.api.nvim_create_autocmd("CursorHold", {
+        callback = function()
+          local opts = {
+            focusable = false,
+            close_events = { "BufLeave", "CursorMoved", "InsertEnter", "FocusLost" },
+            border = "rounded",
+            source = "always",
+            prefix = " ",
+            scope = "cursor",
+          }
+          vim.diagnostic.open_float(nil, opts)
+        end
+      })
+      
+      -- CursorHoldの待機時間を短くする
+      vim.opt.updatetime = 250
     end,
   },
 

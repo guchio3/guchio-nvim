@@ -26,7 +26,6 @@ vim.opt.timeoutlen = 500  -- マッピングのタイムアウト（ミリ秒）
 vim.opt.ttimeoutlen = 10  -- キーコードのタイムアウト（10msは安全な値）
 vim.opt.cmdheight = 2
 vim.opt.shortmess:append("c")
-vim.opt.signcolumn = "yes"
 
 -- 見た目系
 vim.opt.number = true
@@ -38,6 +37,7 @@ vim.opt.wildmode = "list:longest"
 vim.opt.cursorline = true
 vim.opt.termguicolors = true
 vim.opt.background = "dark"
+vim.opt.signcolumn = "auto"  -- サイン列は必要時のみ表示
 
 -- Tab系
 vim.opt.list = true
@@ -49,6 +49,10 @@ vim.opt.shiftwidth = 4
 -- その他
 vim.opt.mouse = "a"
 vim.opt.clipboard = "unnamedplus"
+
+-- タグファイルを無効化（LSPを使用するため）
+vim.opt.tags = ""
+vim.opt.tagstack = false
 
 -- ファイル保存時に末尾に改行を追加（POSIX準拠）
 vim.opt.fixeol = true  -- ファイル末尾に改行がなければ追加
