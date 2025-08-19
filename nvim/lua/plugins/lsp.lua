@@ -77,6 +77,24 @@ return {
         end,
       })
 
+      -- Ruff の重複診断を除外
+      local orig_handler = vim.lsp.handlers["textDocument/publishDiagnostics"]
+      vim.lsp.handlers["textDocument/publishDiagnostics"] = function(err, result, ctx, config)
+        if result and result.diagnostics then
+          local filtered = {}
+          local seen = {}
+          for _, d in ipairs(result.diagnostics) do
+            local key = table.concat({ d.source or "", d.message or "", d.range.start.line, d.range.start.character }, ":")
+            if not seen[key] then
+              seen[key] = true
+              table.insert(filtered, d)
+            end
+          end
+          result.diagnostics = filtered
+        end
+        orig_handler(err, result, ctx, config)
+      end
+
       -- LSPキーマップ
       local on_attach = function(client, bufnr)
         local opts = { noremap = true, silent = true, buffer = bufnr }
