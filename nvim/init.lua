@@ -13,7 +13,7 @@ end
 -- 基本設定
 vim.opt.encoding = "utf-8"
 vim.opt.fileencoding = "utf-8"
-vim.opt.fileencodings = { "iso-2022-jp", "euc-jp", "sjis", "utf-8" }
+vim.opt.fileencodings = { "ucs-bom", "utf-8", "cp932", "latin1" }
 vim.opt.backup = false
 vim.opt.writebackup = false
 vim.opt.swapfile = false
@@ -26,7 +26,7 @@ vim.opt.timeoutlen = 500  -- マッピングのタイムアウト（ミリ秒）
 vim.opt.ttimeoutlen = 10  -- キーコードのタイムアウト（10msは安全な値）
 vim.opt.cmdheight = 2
 vim.opt.shortmess:append("c")
-vim.opt.signcolumn = "auto"
+vim.opt.signcolumn = "no"
 
 -- 見た目系
 vim.opt.number = true
@@ -125,13 +125,14 @@ vim.keymap.set("n", "<C-c><C-c>", ":nohlsearch<CR><Esc>", { noremap = true })
 -- term insert を esc で終了
 vim.keymap.set("t", "<Esc>", "<C-\\><C-n>", { noremap = true })
 
--- Diagnostic navigation
-vim.keymap.set("n", "<C-n>", function()
-  vim.diagnostic.goto_next({ severity = { min = vim.diagnostic.severity.WARN } })
-end, { noremap = true, silent = true, desc = "Next diagnostic" })
-vim.keymap.set("n", "<C-p>", function()
-  vim.diagnostic.goto_prev({ severity = { min = vim.diagnostic.severity.WARN } })
-end, { noremap = true, silent = true, desc = "Prev diagnostic" })
+local function diagnostic_jump(count)
+  vim.diagnostic.jump({
+    count = count,
+    float = true,
+    severity = { min = vim.diagnostic.severity.WARN },
+  })
+end
+_G.diagnostic_jump = diagnostic_jump
 
 -- カラーテーマ切り替え機能
 vim.api.nvim_create_user_command("ThemeSelect", function()

@@ -191,7 +191,6 @@ hook_add = '''
 "     \ 'coc-json',
 "     \ 'coc-sql',
 "     \ 'coc-docker',
-"     \ 'coc-pyright',
 "     \ 'coc-go',
 "     \ 'coc-git',
 "     \ 'coc-json',
@@ -268,8 +267,6 @@ endif
 
 " Use `[g` and `]g` to navigate diagnostics
 " Use `:CocDiagnostics` to get all diagnostics of current buffer in location list.
-nmap <silent> <C-p> <Plug>(coc-diagnostic-prev)
-nmap <silent> <C-n> <Plug>(coc-diagnostic-next)
 
 " Highlight the symbol and its references when holding the cursor.
 autocmd ColorScheme * highlight CocHighlightText ctermbg=238
