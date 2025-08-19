@@ -18,6 +18,7 @@ return {
       ensure_installed = {
         "lua_ls",        -- Lua
         "ruff",          -- Python linter
+        "pyright",       -- Python LSP for definitions
         "gopls",         -- Go
         "ts_ls",         -- TypeScript/JavaScript
         "rust_analyzer", -- Rust
@@ -113,6 +114,14 @@ return {
         end, opts)
         vim.keymap.set("n", ",l", "<cmd>Telescope diagnostics<cr>", opts)
         vim.keymap.set("n", ",d", vim.diagnostic.open_float, opts)
+        pcall(vim.keymap.del, "n", "<C-n>", { buffer = bufnr })
+        pcall(vim.keymap.del, "n", "<C-p>", { buffer = bufnr })
+        vim.keymap.set("n", "<C-n>", function()
+          diagnostic_jump(1)
+        end, { buffer = bufnr, noremap = true, silent = true, nowait = true, desc = "Next diagnostic" })
+        vim.keymap.set("n", "<C-p>", function()
+          diagnostic_jump(-1)
+        end, { buffer = bufnr, noremap = true, silent = true, nowait = true, desc = "Prev diagnostic" })
         vim.keymap.set("n", ",o", function() 
           vim.lsp.buf.code_action({context = {only = {"source.organizeImports"}}}) 
         end, opts)
@@ -229,6 +238,30 @@ return {
           lspconfig.ts_ls.setup({
             capabilities = capabilities,
             on_attach = on_attach,
+          })
+        end,
+
+        ["pyright"] = function()
+          lspconfig.pyright.setup({
+            capabilities = capabilities,
+            on_attach = function(client, bufnr)
+              client.handlers["textDocument/publishDiagnostics"] = function() end
+              on_attach(client, bufnr)
+            end,
+          })
+        end,
+
+        ["ruff"] = function()
+          lspconfig.ruff.setup({
+            capabilities = capabilities,
+            on_attach = function(client, bufnr)
+              for _, c in ipairs(vim.lsp.get_active_clients({ bufnr = bufnr })) do
+                if c.name == client.name and c.id ~= client.id then
+                  c.stop()
+                end
+              end
+              on_attach(client, bufnr)
+            end,
           })
         end,
       })

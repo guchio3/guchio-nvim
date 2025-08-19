@@ -125,8 +125,6 @@ vim.keymap.set("n", "<C-c><C-c>", ":nohlsearch<CR><Esc>", { noremap = true })
 -- term insert を esc で終了
 vim.keymap.set("t", "<Esc>", "<C-\\><C-n>", { noremap = true })
 
-pcall(vim.keymap.del, "", "<C-n>")
-pcall(vim.keymap.del, "", "<C-p>")
 local function diagnostic_jump(step)
   local severity = { min = vim.diagnostic.severity.WARN }
   local diagnostics = vim.diagnostic.get(0, { severity = severity })
@@ -167,12 +165,6 @@ local function diagnostic_jump(step)
   vim.diagnostic.open_float(nil, { focus = false })
 end
 _G.diagnostic_jump = diagnostic_jump
-vim.keymap.set("n", "<C-n>", function()
-  diagnostic_jump(1)
-end, { noremap = true, silent = true, nowait = true, desc = "Next diagnostic" })
-vim.keymap.set("n", "<C-p>", function()
-  diagnostic_jump(-1)
-end, { noremap = true, silent = true, nowait = true, desc = "Prev diagnostic" })
 
 -- カラーテーマ切り替え機能
 vim.api.nvim_create_user_command("ThemeSelect", function()
