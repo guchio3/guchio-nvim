@@ -60,6 +60,9 @@ return {
     },
     config = function()
       local capabilities = require("cmp_nvim_lsp").default_capabilities()
+      local lspconfig = require("lspconfig")
+      local ok_mason, mason_lspconfig = pcall(require, "mason-lspconfig")
+      local util = require("lspconfig.util")
       
       -- LspInfoコマンドを作成
       vim.api.nvim_create_user_command("LspInfo", function()
@@ -81,10 +84,11 @@ return {
 
       -- VS Code風の診断配色はafter/plugin/diagnostic_highlight.luaで設定
 
+      -- 診断フロート（カーソル位置のみ）
       vim.api.nvim_create_autocmd({ "CursorHold", "CursorHoldI" }, {
         callback = function()
           vim.diagnostic.open_float(0, {
-            scope = "cursor",
+            scope = "cursor",  -- カーソル位置のみ
             focus = false,
             border = "rounded",
             source = "if_many",
@@ -100,39 +104,53 @@ return {
           vim.keymap.set(mode, lhs, rhs, { buffer = bufnr, silent = true, desc = desc })
         end
         
-        -- basedpyright の診断をこのバッファでは無効化
+        -- basedpyright の診断を完全無効化 + 既存診断をリセット
         if client and client.name == "basedpyright" then
           client.handlers["textDocument/publishDiagnostics"] = function() end
+          -- 既に出ている basedpyright の診断を即時リセット
+          local ns = vim.lsp.diagnostic and vim.lsp.diagnostic.get_namespace and vim.lsp.diagnostic.get_namespace(client.id)
+          if ns then 
+            vim.diagnostic.reset(ns, bufnr)
+          else
+            -- フォールバック: namespace IDで直接リセット
+            vim.diagnostic.reset(client.id, bufnr)
+          end
         end
 
-        -- 既存のC-n/C-pマッピングをクリア
-        pcall(vim.keymap.del, "n", "<C-n>", { buffer = bufnr })
-        pcall(vim.keymap.del, "n", "<C-p>", { buffer = bufnr })
+        -- グローバルの C-n/C-p を先に削除
+        pcall(vim.keymap.del, "n", "<C-n>")
+        pcall(vim.keymap.del, "n", "<C-p>")
 
         map("n", "K", vim.lsp.buf.hover, "LSP: Hover")
         map("n", "gd", vim.lsp.buf.definition, "LSP: Go to Definition")
         map("n", "gD", vim.lsp.buf.declaration, "LSP: Go to Declaration")
-        -- gr は goto-preview で上書きされる
         map("n", "gi", vim.lsp.buf.implementation, "LSP: Implementation")
         
-        -- VS Code風のPeek（goto-previewを利用）
-        local ok, goto_preview = pcall(require, "goto-preview")
-        if ok then
-          map("n", "<C-]>", goto_preview.goto_preview_definition, "Peek Definition")
-          map("n", "gr", goto_preview.goto_preview_references, "Peek References")
-          map("n", "gI", goto_preview.goto_preview_implementation, "Peek Implementation")
-          map("n", "<Esc>", goto_preview.close_all_win, "Close Peek windows")
-        else
-          map("n", "<C-]>", vim.lsp.buf.definition, "LSP: Go to Definition (Ctrl-])")
-          map("n", "gr", vim.lsp.buf.references, "LSP: References")
-        end
-        -- 診断ジャンプ（古い Neovim でも動く API を使用）
-        local function diag_next() vim.diagnostic.goto_next({}) end
-        local function diag_prev() vim.diagnostic.goto_prev({}) end
-        map("n", "<C-n>", diag_next, "Diagnostics: Next")
-        map("n", "<C-p>", diag_prev, "Diagnostics: Prev")
-        map("n", "]d", diag_next, "Diagnostics: Next")
-        map("n", "[d", diag_prev, "Diagnostics: Prev")
+        -- 定義/参照: goto-preview 優先（無ければフォールバック）
+        map("n", "<C-]>", function()
+          local ok, gp = pcall(require, "goto-preview")
+          if ok and gp.goto_preview_definition then 
+            return gp.goto_preview_definition() 
+          end
+          return vim.lsp.buf.definition()
+        end, "LSP: Peek Definition")
+        
+        map("n", "gr", function()
+          local ok, gp = pcall(require, "goto-preview")
+          if ok and gp.goto_preview_references then 
+            return gp.goto_preview_references() 
+          end
+          return vim.lsp.buf.references()
+        end, "LSP: Peek References")
+        
+        -- 診断ジャンプ（API を goto_* に統一）
+        local function dnext() vim.diagnostic.goto_next({}) end
+        local function dprev() vim.diagnostic.goto_prev({}) end
+        map("n", "<C-n>", dnext, "Diagnostics: Next")
+        map("n", "<C-p>", dprev, "Diagnostics: Prev")
+        map("n", "]d", dnext, "Diagnostics: Next")
+        map("n", "[d", dprev, "Diagnostics: Prev")
+        
         map("n", ",r", vim.lsp.buf.rename, "LSP: Rename")
         map("n", ",a", vim.lsp.buf.format, "LSP: Format")
         map("v", ",a", vim.lsp.buf.format, "LSP: Format")
@@ -145,12 +163,7 @@ return {
         end
       end
 
-      -- LSPサーバーの設定
-      local lspconfig = require("lspconfig")
-      local ok_mason, mason_lspconfig = pcall(require, "mason-lspconfig")
-      local util = require("lspconfig.util")
-      
-      -- mason-lspconfig が新しければ setup_handlers、古ければフォールバック
+      -- ===== LSP servers (setup_handlers は 1 箇所のみ) =====
       local servers = { "lua_ls", "basedpyright", "ruff", "gopls", "ts_ls" }
       
       if ok_mason and type(mason_lspconfig.setup) == "function" then
@@ -159,96 +172,35 @@ return {
         if type(mason_lspconfig.setup_handlers) == "function" then
           -- 新しい API（setup_handlers がある場合）
           mason_lspconfig.setup_handlers({
-        -- デフォルトハンドラー
-        function(server_name)
-          lspconfig[server_name].setup({
-            capabilities = capabilities,
-            on_attach = on_attach,
-          })
-        end,
-        
-        -- 特定のサーバー用カスタム設定
-        ["lua_ls"] = function()
-          lspconfig.lua_ls.setup({
-            capabilities = capabilities,
-            on_attach = on_attach,
-            settings = {
-              Lua = {
-                runtime = {
-                  version = "LuaJIT",
-                },
-                diagnostics = {
-                  globals = { "vim" },
-                },
-                workspace = {
-                  library = vim.api.nvim_get_runtime_file("", true),
-                  checkThirdParty = false,
-                },
-                telemetry = {
-                  enable = false,
-                },
-              },
-            },
-          })
-        end,
-        
-        ["gopls"] = function()
-          lspconfig.gopls.setup({
-            capabilities = capabilities,
-            on_attach = on_attach,
-            settings = {
-              gopls = {
-                analyses = {
-                  unusedparams = true,
-                },
-                staticcheck = true,
-              },
-            },
-          })
-        end,
-
-        ["basedpyright"] = function()
-          lspconfig.basedpyright.setup({
-            capabilities = capabilities,
-            on_attach = on_attach,
-            root_dir = util.root_pattern("pyproject.toml", "setup.cfg", "requirements.txt", ".git"),
-            settings = {
-              basedpyright = { disableOrganizeImports = true },
-              python = {
-                analysis = {
-                  typeCheckingMode = "basic",
-                  diagnosticSeverityOverrides = {
-                    reportMissingImports = "none",
-                    reportDeprecated = "none",
+            -- デフォルトハンドラー
+            function(server)
+              lspconfig[server].setup({ 
+                on_attach = on_attach, 
+                capabilities = capabilities 
+              })
+            end,
+            
+            -- lua_ls
+            ["lua_ls"] = function()
+              lspconfig.lua_ls.setup({
+                on_attach = on_attach,
+                capabilities = capabilities,
+                settings = {
+                  Lua = {
+                    runtime = { version = "LuaJIT" },
+                    diagnostics = { globals = { "vim" } },
+                    workspace = {
+                      library = vim.api.nvim_get_runtime_file("", true),
+                      checkThirdParty = false,
+                    },
+                    telemetry = { enable = false },
                   },
-                  autoSearchPaths = true,
-                  useLibraryCodeForTypes = true,
                 },
-              },
-            },
-          })
-        end,
-
-        ["ruff"] = function()
-          lspconfig.ruff.setup({
-            capabilities = capabilities,
-            on_attach = on_attach,
-            root_dir = util.root_pattern("pyproject.toml", "ruff.toml", ".git"),
-          })
-        end,
-
-        ["ts_ls"] = function()
-          lspconfig.ts_ls.setup({
-            capabilities = capabilities,
-            on_attach = on_attach,
-          })
-        end,
-          })
-        else
-          -- mason-lspconfig が古くて setup_handlers が無い場合のフォールバック
-          local installed_servers = mason_lspconfig.get_installed_servers()
-          for _, server in ipairs(installed_servers) do
-            if server == "basedpyright" then
+              })
+            end,
+            
+            -- basedpyright（診断は on_attach で止める）
+            ["basedpyright"] = function()
               lspconfig.basedpyright.setup({
                 on_attach = on_attach,
                 capabilities = capabilities,
@@ -257,13 +209,61 @@ return {
                   python = {
                     analysis = {
                       typeCheckingMode = "basic",
-                      diagnosticSeverityOverrides = {
-                        reportMissingImports = "none",
-                        reportDeprecated = "none",
-                      },
                       autoSearchPaths = true,
                       useLibraryCodeForTypes = true,
                     },
+                  },
+                  basedpyright = { disableOrganizeImports = true },
+                },
+              })
+            end,
+            
+            -- ruff（1回だけ attach）
+            ["ruff"] = function()
+              lspconfig.ruff.setup({
+                on_attach = on_attach,
+                capabilities = capabilities,
+                root_dir = util.root_pattern("pyproject.toml", "ruff.toml", ".git"),
+              })
+            end,
+            
+            -- gopls
+            ["gopls"] = function()
+              lspconfig.gopls.setup({
+                on_attach = on_attach,
+                capabilities = capabilities,
+                settings = {
+                  gopls = {
+                    analyses = { unusedparams = true },
+                    staticcheck = true,
+                  },
+                },
+              })
+            end,
+            
+            -- ts_ls
+            ["ts_ls"] = function()
+              lspconfig.ts_ls.setup({
+                on_attach = on_attach,
+                capabilities = capabilities,
+              })
+            end,
+          })
+        else
+          -- 古い mason-lspconfig（setup_handlers が無い）→ 明示フォールバック
+          for _, server in ipairs(servers) do
+            if server == "basedpyright" then
+              lspconfig.basedpyright.setup({
+                on_attach = on_attach,
+                capabilities = capabilities,
+                root_dir = util.root_pattern("pyproject.toml", "setup.cfg", "requirements.txt", ".git"),
+                settings = {
+                  python = { 
+                    analysis = { 
+                      typeCheckingMode = "basic", 
+                      autoSearchPaths = true, 
+                      useLibraryCodeForTypes = true 
+                    } 
                   },
                   basedpyright = { disableOrganizeImports = true },
                 },
@@ -302,41 +302,39 @@ return {
                 },
               })
             else
-              lspconfig[server].setup({ on_attach = on_attach, capabilities = capabilities })
+              lspconfig[server].setup({ 
+                on_attach = on_attach, 
+                capabilities = capabilities 
+              })
             end
           end
         end
       else
-        -- mason-lspconfig 自体が読めない・未インストールのフォールバック
-        print("[LSP] mason-lspconfig not found, using fallback setup")
-        -- 最低限のサーバーを手動設定
-        if lspconfig.lua_ls then
-          lspconfig.lua_ls.setup({ on_attach = on_attach, capabilities = capabilities })
-        end
-        if lspconfig.basedpyright then
-          lspconfig.basedpyright.setup({
-            on_attach = on_attach,
-            capabilities = capabilities,
-            root_dir = util.root_pattern("pyproject.toml", "setup.cfg", "requirements.txt", ".git"),
-            settings = {
-              python = {
-                analysis = {
-                  typeCheckingMode = "basic",
-                  autoSearchPaths = true,
-                  useLibraryCodeForTypes = true,
-                },
-              },
-              basedpyright = { disableOrganizeImports = true },
+        -- mason-lspconfig が無い場合の最小セット
+        lspconfig.lua_ls.setup({ 
+          on_attach = on_attach, 
+          capabilities = capabilities 
+        })
+        lspconfig.basedpyright.setup({
+          on_attach = on_attach,
+          capabilities = capabilities,
+          root_dir = util.root_pattern("pyproject.toml", "setup.cfg", "requirements.txt", ".git"),
+          settings = {
+            python = { 
+              analysis = { 
+                typeCheckingMode = "basic", 
+                autoSearchPaths = true, 
+                useLibraryCodeForTypes = true 
+              } 
             },
-          })
-        end
-        if lspconfig.ruff then
-          lspconfig.ruff.setup({
-            on_attach = on_attach,
-            capabilities = capabilities,
-            root_dir = util.root_pattern("pyproject.toml", "ruff.toml", ".git"),
-          })
-        end
+            basedpyright = { disableOrganizeImports = true },
+          },
+        })
+        lspconfig.ruff.setup({
+          on_attach = on_attach,
+          capabilities = capabilities,
+          root_dir = util.root_pattern("pyproject.toml", "ruff.toml", ".git"),
+        })
       end
     end,
   },
