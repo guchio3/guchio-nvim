@@ -125,22 +125,54 @@ vim.keymap.set("n", "<C-c><C-c>", ":nohlsearch<CR><Esc>", { noremap = true })
 -- term insert を esc で終了
 vim.keymap.set("t", "<Esc>", "<C-\\><C-n>", { noremap = true })
 
--- Diagnostic navigation
-pcall(vim.keymap.del, "n", "<C-n>")
-pcall(vim.keymap.del, "n", "<C-p>")
-local diagnostic_jump = vim.diagnostic.jump or function(opts)
-  if opts.count and opts.count < 0 then
-    vim.diagnostic.goto_prev(opts)
-  else
-    vim.diagnostic.goto_next(opts)
+pcall(vim.keymap.del, "", "<C-n>")
+pcall(vim.keymap.del, "", "<C-p>")
+local function diagnostic_jump(step)
+  local severity = { min = vim.diagnostic.severity.WARN }
+  local diagnostics = vim.diagnostic.get(0, { severity = severity })
+  if #diagnostics == 0 then
+    return
   end
+  table.sort(diagnostics, function(a, b)
+    if a.lnum == b.lnum then
+      return a.col < b.col
+    end
+    return a.lnum < b.lnum
+  end)
+  local pos = vim.api.nvim_win_get_cursor(0)
+  local target
+  if step > 0 then
+    for _, d in ipairs(diagnostics) do
+      if d.lnum > pos[1] - 1 or (d.lnum == pos[1] - 1 and d.col > pos[2]) then
+        target = d
+        break
+      end
+    end
+    if not target then
+      target = diagnostics[1]
+    end
+  else
+    for i = #diagnostics, 1, -1 do
+      local d = diagnostics[i]
+      if d.lnum < pos[1] - 1 or (d.lnum == pos[1] - 1 and d.col < pos[2]) then
+        target = d
+        break
+      end
+    end
+    if not target then
+      target = diagnostics[#diagnostics]
+    end
+  end
+  vim.api.nvim_win_set_cursor(0, { target.lnum + 1, target.col })
+  vim.diagnostic.open_float(nil, { focus = false })
 end
+_G.diagnostic_jump = diagnostic_jump
 vim.keymap.set("n", "<C-n>", function()
-  diagnostic_jump({ count = 1, severity = { min = vim.diagnostic.severity.WARN } })
-end, { noremap = true, silent = true, desc = "Next diagnostic" })
+  diagnostic_jump(1)
+end, { noremap = true, silent = true, nowait = true, desc = "Next diagnostic" })
 vim.keymap.set("n", "<C-p>", function()
-  diagnostic_jump({ count = -1, severity = { min = vim.diagnostic.severity.WARN } })
-end, { noremap = true, silent = true, desc = "Prev diagnostic" })
+  diagnostic_jump(-1)
+end, { noremap = true, silent = true, nowait = true, desc = "Prev diagnostic" })
 
 -- カラーテーマ切り替え機能
 vim.api.nvim_create_user_command("ThemeSelect", function()

@@ -62,21 +62,20 @@ return {
         },
       })
 
-      -- エラーと警告を下線と背景色で表示
+      -- エラーと警告を下線と淡い背景色で表示
       local function set_diagnostic_hl()
-        vim.api.nvim_set_hl(0, "DiagnosticUnderlineError", { underline = true, bg = "#ff0000" })
-        vim.api.nvim_set_hl(0, "DiagnosticUnderlineWarn", { underline = true, bg = "#0000ff" })
+        vim.api.nvim_set_hl(0, "DiagnosticUnderlineError", { underline = true, bg = "#553333", blend = 50 })
+        vim.api.nvim_set_hl(0, "DiagnosticUnderlineWarn", { underline = true, bg = "#333355", blend = 50 })
+        vim.api.nvim_set_hl(0, "DiagnosticUnnecessary", { underline = true, bg = "#333355", blend = 50 })
       end
       set_diagnostic_hl()
       vim.api.nvim_create_autocmd("ColorScheme", { callback = set_diagnostic_hl })
 
-      local diagnostic_jump = vim.diagnostic.jump or function(opts)
-        if opts.count and opts.count < 0 then
-          vim.diagnostic.goto_prev(opts)
-        else
-          vim.diagnostic.goto_next(opts)
-        end
-      end
+      vim.api.nvim_create_autocmd("CursorHold", {
+        callback = function()
+          vim.diagnostic.open_float(nil, { focus = false })
+        end,
+      })
 
       -- LSPキーマップ
       local on_attach = function(client, bufnr)
@@ -89,10 +88,10 @@ return {
         vim.keymap.set("n", ",a", vim.lsp.buf.format, opts)
         vim.keymap.set("v", ",a", vim.lsp.buf.format, opts)
         vim.keymap.set("n", "[d", function()
-          diagnostic_jump({ count = -1 })
+          diagnostic_jump(-1)
         end, opts)
         vim.keymap.set("n", "]d", function()
-          diagnostic_jump({ count = 1 })
+          diagnostic_jump(1)
         end, opts)
         vim.keymap.set("n", ",l", "<cmd>Telescope diagnostics<cr>", opts)
         vim.keymap.set("n", ",d", vim.diagnostic.open_float, opts)
