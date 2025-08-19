@@ -18,7 +18,6 @@ return {
       ensure_installed = {
         "lua_ls",        -- Lua
         "ruff",          -- Python linter
-        "pyright",       -- Python LSP for definitions
         "gopls",         -- Go
         "ts_ls",         -- TypeScript/JavaScript
         "rust_analyzer", -- Rust
@@ -82,10 +81,9 @@ return {
       local orig_handler = vim.lsp.handlers["textDocument/publishDiagnostics"]
       vim.lsp.handlers["textDocument/publishDiagnostics"] = function(err, result, ctx, config)
         if result and result.diagnostics then
-          local filtered = {}
-          local seen = {}
+          local filtered, seen = {}, {}
           for _, d in ipairs(result.diagnostics) do
-            local key = table.concat({ d.source or "", d.message or "", d.range.start.line, d.range.start.character }, ":")
+            local key = table.concat({ d.message or "", d.range.start.line, d.range.start.character }, ":")
             if not seen[key] then
               seen[key] = true
               table.insert(filtered, d)
@@ -241,19 +239,10 @@ return {
           })
         end,
 
-        ["pyright"] = function()
-          lspconfig.pyright.setup({
-            capabilities = capabilities,
-            on_attach = function(client, bufnr)
-              client.handlers["textDocument/publishDiagnostics"] = function() end
-              on_attach(client, bufnr)
-            end,
-          })
-        end,
-
         ["ruff"] = function()
           lspconfig.ruff.setup({
             capabilities = capabilities,
+            single_file_support = false,
             on_attach = function(client, bufnr)
               for _, c in ipairs(vim.lsp.get_active_clients({ bufnr = bufnr })) do
                 if c.name == client.name and c.id ~= client.id then
