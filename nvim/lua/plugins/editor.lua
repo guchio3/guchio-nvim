@@ -133,7 +133,7 @@ return {
       "nvim-tree/nvim-web-devicons",
     },
     keys = {
-      { "<C-n>", "<cmd>NvimTreeToggle<cr>", desc = "Toggle file tree" },
+      { "<C-e>", "<cmd>NvimTreeToggle<cr>", desc = "Toggle file tree" },
       { ",n", "<cmd>NvimTreeFindFile<cr>", desc = "Find current file in tree" },
     },
     opts = {
@@ -173,6 +173,11 @@ return {
         enable = true,
         ignore = false,
       },
+      on_attach = function(bufnr)
+        local api = require("nvim-tree.api")
+        api.config.mappings.default_on_attach(bufnr)
+        vim.keymap.set("n", "<C-e>", api.tree.toggle, { buffer = bufnr })
+      end,
     },
   },
 
@@ -209,7 +214,7 @@ return {
         delete       = { text = '_' },
         topdelete    = { text = '‾' },
         changedelete = { text = '~' },
-        untracked    = { text = '┆' },
+        untracked    = { text = '' },
       },
       signcolumn = true,  -- Sign columnにgit差分を表示
       numhl      = false, -- 行番号のハイライト

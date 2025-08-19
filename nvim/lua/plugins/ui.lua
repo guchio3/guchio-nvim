@@ -45,14 +45,6 @@ return {
     end,
   },
 
-  -- ウィンドウリサイズ
-  {
-    "simeji/winresizer",
-    keys = {
-      { "<C-e>", "<cmd>WinResizerStartResize<cr>", desc = "Window Resizer" },
-    },
-  },
-
   -- 括弧の自動補完
   {
     "cohama/lexima.vim",

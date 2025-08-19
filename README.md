@@ -60,6 +60,8 @@ nvim() {
 - `,a` - Format code
 - `[d` - Previous diagnostic
 - `]d` - Next diagnostic
+- `<C-p>` - Previous error or warning
+- `<C-n>` - Next error or warning
 - `,d` - Show diagnostic in floating window
 - `,o` - Organize imports
 - `,l` - List diagnostics
@@ -67,7 +69,7 @@ nvim() {
 - `,i` - Show LSP server info
 
 ### File Tree
-- `<C-n>` - Toggle file tree
+- `<C-e>` - Toggle file tree
 - `,n` - Find current file in tree
 
 ### Comments
