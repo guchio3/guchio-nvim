@@ -26,7 +26,7 @@ vim.opt.timeoutlen = 500  -- マッピングのタイムアウト（ミリ秒）
 vim.opt.ttimeoutlen = 10  -- キーコードのタイムアウト（10msは安全な値）
 vim.opt.cmdheight = 2
 vim.opt.shortmess:append("c")
-vim.opt.signcolumn = "auto"
+vim.opt.signcolumn = "no"
 
 -- 見た目系
 vim.opt.number = true
@@ -128,11 +128,18 @@ vim.keymap.set("t", "<Esc>", "<C-\\><C-n>", { noremap = true })
 -- Diagnostic navigation
 pcall(vim.keymap.del, "n", "<C-n>")
 pcall(vim.keymap.del, "n", "<C-p>")
+local diagnostic_jump = vim.diagnostic.jump or function(opts)
+  if opts.count and opts.count < 0 then
+    vim.diagnostic.goto_prev(opts)
+  else
+    vim.diagnostic.goto_next(opts)
+  end
+end
 vim.keymap.set("n", "<C-n>", function()
-  vim.diagnostic.goto_next({ severity = { min = vim.diagnostic.severity.WARN } })
+  diagnostic_jump({ count = 1, severity = { min = vim.diagnostic.severity.WARN } })
 end, { noremap = true, silent = true, desc = "Next diagnostic" })
 vim.keymap.set("n", "<C-p>", function()
-  vim.diagnostic.goto_prev({ severity = { min = vim.diagnostic.severity.WARN } })
+  diagnostic_jump({ count = -1, severity = { min = vim.diagnostic.severity.WARN } })
 end, { noremap = true, silent = true, desc = "Prev diagnostic" })
 
 -- カラーテーマ切り替え機能

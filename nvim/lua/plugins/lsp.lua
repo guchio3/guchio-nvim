@@ -63,8 +63,20 @@ return {
       })
 
       -- エラーと警告を下線と背景色で表示
-      vim.api.nvim_set_hl(0, "DiagnosticUnderlineError", { underline = true, bg = "#ff0000" })
-      vim.api.nvim_set_hl(0, "DiagnosticUnderlineWarn", { underline = true, bg = "#0000ff" })
+      local function set_diagnostic_hl()
+        vim.api.nvim_set_hl(0, "DiagnosticUnderlineError", { underline = true, bg = "#ff0000" })
+        vim.api.nvim_set_hl(0, "DiagnosticUnderlineWarn", { underline = true, bg = "#0000ff" })
+      end
+      set_diagnostic_hl()
+      vim.api.nvim_create_autocmd("ColorScheme", { callback = set_diagnostic_hl })
+
+      local diagnostic_jump = vim.diagnostic.jump or function(opts)
+        if opts.count and opts.count < 0 then
+          vim.diagnostic.goto_prev(opts)
+        else
+          vim.diagnostic.goto_next(opts)
+        end
+      end
 
       -- LSPキーマップ
       local on_attach = function(client, bufnr)
@@ -77,10 +89,10 @@ return {
         vim.keymap.set("n", ",a", vim.lsp.buf.format, opts)
         vim.keymap.set("v", ",a", vim.lsp.buf.format, opts)
         vim.keymap.set("n", "[d", function()
-          vim.diagnostic.goto_prev({})
+          diagnostic_jump({ count = -1 })
         end, opts)
         vim.keymap.set("n", "]d", function()
-          vim.diagnostic.goto_next({})
+          diagnostic_jump({ count = 1 })
         end, opts)
         vim.keymap.set("n", ",l", "<cmd>Telescope diagnostics<cr>", opts)
         vim.keymap.set("n", ",d", vim.diagnostic.open_float, opts)
@@ -129,11 +141,6 @@ return {
                   staticcheck = true,
                 },
               },
-            })
-          elseif server_name == "ruff" then
-            lspconfig.ruff.setup({
-              capabilities = capabilities,
-              on_attach = on_attach,
             })
           elseif server_name == "ts_ls" then
             lspconfig.ts_ls.setup({
@@ -198,13 +205,6 @@ return {
                 staticcheck = true,
               },
             },
-          })
-        end,
-        
-        ["ruff"] = function()
-          lspconfig.ruff.setup({
-            capabilities = capabilities,
-            on_attach = on_attach,
           })
         end,
         
