@@ -92,7 +92,7 @@ RUN nvim --headless "+Lazy! sync" +qa || true && \
     nvim --headless -c "TSUpdateSync" +qa || true && \
     nvim --headless \
         -c "MasonInstall lua-language-server gopls rust-analyzer typescript-language-server" \
-        -c "MasonInstall dockerfile-language-server yaml-language-server json-lsp bash-language-server ruff" \
+        -c "MasonInstall dockerfile-language-server yaml-language-server json-lsp bash-language-server ruff basedpyright" \
         -c "MasonInstall gofumpt golangci-lint prettier stylua shellcheck shfmt" \
         +qa 2>/dev/null || true
 ENV DOCKER_BUILD=

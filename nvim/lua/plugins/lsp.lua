@@ -18,6 +18,7 @@ return {
       ensure_installed = {
         "lua_ls",        -- Lua
         "ruff",          -- Python linter
+        "basedpyright",  -- Python language server
         "gopls",         -- Go
         "ts_ls",         -- TypeScript/JavaScript
         "rust_analyzer", -- Rust
@@ -79,44 +80,30 @@ return {
 
       -- LSPキーマップ
       local on_attach = function(client, bufnr)
-        local opts = { noremap = true, silent = true, buffer = bufnr }
-
-        if client.name == "ruff" then
-          for _, c in ipairs(vim.lsp.get_active_clients({ bufnr = bufnr })) do
-            if c.name == "ruff" and c.id ~= client.id then
-              client.stop()
-              return
-            end
-          end
+        local function map(mode, lhs, rhs, desc)
+          vim.keymap.set(mode, lhs, rhs, { buffer = bufnr, silent = true, desc = desc })
         end
 
-        vim.keymap.set("n", "K", vim.lsp.buf.hover, opts)
-        vim.keymap.set("n", "<C-]>", vim.lsp.buf.definition, opts)
-        vim.keymap.set("n", "<C-[>", vim.lsp.buf.references, opts)
-        vim.keymap.set("n", ",r", vim.lsp.buf.rename, opts)
-        vim.keymap.set("n", ",a", vim.lsp.buf.format, opts)
-        vim.keymap.set("v", ",a", vim.lsp.buf.format, opts)
-        vim.keymap.set("n", "[d", function()
-          diagnostic_jump(-1)
-        end, opts)
-        vim.keymap.set("n", "]d", function()
-          diagnostic_jump(1)
-        end, opts)
-        vim.keymap.set("n", ",l", "<cmd>Telescope diagnostics<cr>", opts)
-        vim.keymap.set("n", ",d", vim.diagnostic.open_float, opts)
         pcall(vim.keymap.del, "n", "<C-n>", { buffer = bufnr })
         pcall(vim.keymap.del, "n", "<C-p>", { buffer = bufnr })
-        vim.keymap.set("n", "<C-n>", function()
-          diagnostic_jump(1)
-        end, { buffer = bufnr, noremap = true, silent = true, nowait = true, desc = "Next diagnostic" })
-        vim.keymap.set("n", "<C-p>", function()
-          diagnostic_jump(-1)
-        end, { buffer = bufnr, noremap = true, silent = true, nowait = true, desc = "Prev diagnostic" })
-        vim.keymap.set("n", ",o", function() 
-          vim.lsp.buf.code_action({context = {only = {"source.organizeImports"}}}) 
-        end, opts)
-        
-        -- セマンティックトークンを無効化（パフォーマンス向上）
+
+        map("n", "K", vim.lsp.buf.hover, "LSP: Hover")
+        map("n", "gd", vim.lsp.buf.definition, "LSP: Go to Definition")
+        map("n", "gD", vim.lsp.buf.declaration, "LSP: Go to Declaration")
+        map("n", "gr", vim.lsp.buf.references, "LSP: References")
+        map("n", "gi", vim.lsp.buf.implementation, "LSP: Implementation")
+        map("n", "<C-]>", vim.lsp.buf.definition, "LSP: Go to Definition (Ctrl-])")
+        map("n", "<C-n>", function() vim.diagnostic.jump({ count = 1 }) end, "Diagnostics: Next")
+        map("n", "<C-p>", function() vim.diagnostic.jump({ count = -1 }) end, "Diagnostics: Prev")
+        map("n", "]d", function() vim.diagnostic.jump({ count = 1 }) end, "Diagnostics: Next")
+        map("n", "[d", function() vim.diagnostic.jump({ count = -1 }) end, "Diagnostics: Prev")
+        map("n", ",r", vim.lsp.buf.rename, "LSP: Rename")
+        map("n", ",a", vim.lsp.buf.format, "LSP: Format")
+        map("v", ",a", vim.lsp.buf.format, "LSP: Format")
+        map("n", ",l", "<cmd>Telescope diagnostics<cr>", "Telescope diagnostics")
+        map("n", ",d", vim.diagnostic.open_float, "Diagnostic float")
+        map("n", ",o", function() vim.lsp.buf.code_action({ context = { only = { "source.organizeImports" } } }) end, "Organize Imports")
+
         if client.server_capabilities.semanticTokensProvider then
           client.server_capabilities.semanticTokensProvider = nil
         end
@@ -155,6 +142,21 @@ return {
                 gopls = {
                   analyses = { unusedparams = true },
                   staticcheck = true,
+                },
+              },
+            })
+          elseif server_name == "basedpyright" then
+            lspconfig.basedpyright.setup({
+              capabilities = capabilities,
+              on_attach = on_attach,
+              settings = {
+                basedpyright = { disableOrganizeImports = true },
+                python = {
+                  analysis = {
+                    autoSearchPaths = true,
+                    useLibraryCodeForTypes = true,
+                    diagnosticMode = "workspace",
+                  },
                 },
               },
             })
@@ -209,26 +211,43 @@ return {
           })
         end,
         
-        ["gopls"] = function()
-          lspconfig.gopls.setup({
-            capabilities = capabilities,
-            on_attach = on_attach,
-            settings = {
-              gopls = {
-                analyses = {
-                  unusedparams = true,
+          ["gopls"] = function()
+            lspconfig.gopls.setup({
+              capabilities = capabilities,
+              on_attach = on_attach,
+              settings = {
+                gopls = {
+                  analyses = {
+                    unusedparams = true,
+                  },
+                  staticcheck = true,
                 },
-                staticcheck = true,
               },
-            },
-          })
-        end,
-        
-        ["ts_ls"] = function()
-          lspconfig.ts_ls.setup({
-            capabilities = capabilities,
-            on_attach = on_attach,
-          })
+            })
+          end,
+
+          ["basedpyright"] = function()
+            lspconfig.basedpyright.setup({
+              capabilities = capabilities,
+              on_attach = on_attach,
+              settings = {
+                basedpyright = { disableOrganizeImports = true },
+                python = {
+                  analysis = {
+                    autoSearchPaths = true,
+                    useLibraryCodeForTypes = true,
+                    diagnosticMode = "workspace",
+                  },
+                },
+              },
+            })
+          end,
+
+          ["ts_ls"] = function()
+            lspconfig.ts_ls.setup({
+              capabilities = capabilities,
+              on_attach = on_attach,
+            })
         end,
       })
       end

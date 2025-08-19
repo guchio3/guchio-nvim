@@ -13,7 +13,7 @@ end
 -- 基本設定
 vim.opt.encoding = "utf-8"
 vim.opt.fileencoding = "utf-8"
-vim.opt.fileencodings = { "iso-2022-jp", "euc-jp", "sjis", "utf-8" }
+vim.opt.fileencodings = { "ucs-bom", "utf-8", "cp932", "latin1" }
 vim.opt.backup = false
 vim.opt.writebackup = false
 vim.opt.swapfile = false
