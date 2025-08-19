@@ -79,35 +79,7 @@ return {
         },
       })
 
-      -- VS Code風の診断配色
-      local function set_diagnostic_hl()
-        -- エラー（赤）
-        vim.api.nvim_set_hl(0, "DiagnosticError", { fg = "#F14C4C" })
-        vim.api.nvim_set_hl(0, "DiagnosticUnderlineError", { undercurl = true, sp = "#F14C4C" })
-        
-        -- 警告（黄色）
-        vim.api.nvim_set_hl(0, "DiagnosticWarn", { fg = "#CCA700" })
-        vim.api.nvim_set_hl(0, "DiagnosticUnderlineWarn", { undercurl = true, sp = "#CCA700" })
-        
-        -- 情報（青）
-        vim.api.nvim_set_hl(0, "DiagnosticInfo", { fg = "#3794FF" })
-        vim.api.nvim_set_hl(0, "DiagnosticUnderlineInfo", { undercurl = true, sp = "#3794FF" })
-        
-        -- ヒント（緑）
-        vim.api.nvim_set_hl(0, "DiagnosticHint", { fg = "#10B981" })
-        vim.api.nvim_set_hl(0, "DiagnosticUnderlineHint", { undercurl = true, sp = "#10B981" })
-        
-        -- 不要なコード（薄い表示）
-        vim.api.nvim_set_hl(0, "DiagnosticUnnecessary", { fg = "#808080", italic = true })
-      end
-      set_diagnostic_hl()
-      vim.api.nvim_create_autocmd("ColorScheme", { callback = set_diagnostic_hl })
-      
-      -- VS Code風のサインアイコン
-      vim.fn.sign_define("DiagnosticSignError", { text = "●", texthl = "DiagnosticError" })
-      vim.fn.sign_define("DiagnosticSignWarn", { text = "●", texthl = "DiagnosticWarn" })
-      vim.fn.sign_define("DiagnosticSignInfo", { text = "●", texthl = "DiagnosticInfo" })
-      vim.fn.sign_define("DiagnosticSignHint", { text = "●", texthl = "DiagnosticHint" })
+      -- VS Code風の診断配色はafter/plugin/diagnostic_highlight.luaで設定
 
       vim.api.nvim_create_autocmd({ "CursorHold", "CursorHoldI" }, {
         callback = function()
@@ -135,18 +107,19 @@ return {
         map("n", "K", vim.lsp.buf.hover, "LSP: Hover")
         map("n", "gd", vim.lsp.buf.definition, "LSP: Go to Definition")
         map("n", "gD", vim.lsp.buf.declaration, "LSP: Go to Declaration")
-        map("n", "gr", vim.lsp.buf.references, "LSP: References")
+        -- gr は goto-preview で上書きされる
         map("n", "gi", vim.lsp.buf.implementation, "LSP: Implementation")
         
         -- VS Code風のPeek（goto-previewを利用）
         local ok, goto_preview = pcall(require, "goto-preview")
         if ok then
           map("n", "<C-]>", goto_preview.goto_preview_definition, "Peek Definition")
-          map("n", "gR", goto_preview.goto_preview_references, "Peek References")
+          map("n", "gr", goto_preview.goto_preview_references, "Peek References")
           map("n", "gI", goto_preview.goto_preview_implementation, "Peek Implementation")
           map("n", "<Esc>", goto_preview.close_all_win, "Close Peek windows")
         else
           map("n", "<C-]>", vim.lsp.buf.definition, "LSP: Go to Definition (Ctrl-])")
+          map("n", "gr", vim.lsp.buf.references, "LSP: References")
         end
         -- 診断ジャンプ（安定化のためnowaitを使わない）
         local function diag_next() vim.diagnostic.jump({ count = 1 }) end
@@ -259,6 +232,17 @@ return {
           })
         end,
       })
+      
+      -- basedpyright の診断を Neovim 側で完全に無効化（機能は残す）
+      local default_handler = vim.lsp.handlers["textDocument/publishDiagnostics"]
+      vim.lsp.handlers["textDocument/publishDiagnostics"] = function(err, result, ctx, conf)
+        local client = vim.lsp.get_client_by_id(ctx.client_id)
+        if client and client.name == "basedpyright" then
+          -- basedpyright の診断を無視（Ruff のみ使用）
+          return
+        end
+        return default_handler(err, result, ctx, conf)
+      end
     end,
   },
 
