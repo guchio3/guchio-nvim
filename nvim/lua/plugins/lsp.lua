@@ -31,6 +31,23 @@ return {
     },
   },
 
+  -- goto-preview: VS Code風のPeek UI
+  {
+    "rmagatti/goto-preview",
+    config = function()
+      require("goto-preview").setup({
+        default_mappings = false,
+        resizing_mappings = false,
+        width = 100,
+        height = 18,
+        border = "rounded",
+        post_open_hook = function(_, win)
+          vim.api.nvim_win_set_option(win, "winblend", 3)
+        end,
+      })
+    end,
+  },
+
   -- LSP設定
   {
     "neovim/nvim-lspconfig",
@@ -39,6 +56,7 @@ return {
       "williamboman/mason.nvim",
       "williamboman/mason-lspconfig.nvim",
       "hrsh7th/cmp-nvim-lsp",
+      "rmagatti/goto-preview",
     },
     config = function()
       local capabilities = require("cmp_nvim_lsp").default_capabilities()
@@ -51,30 +69,56 @@ return {
       -- 診断表示の設定
       vim.diagnostic.config({
         virtual_text = false, -- 仮想テキストは非表示（軽量化）
-        signs = false,
+        signs = true,
         underline = true,
         update_in_insert = false,
         severity_sort = true,
         float = {
           border = "rounded",
-          source = "always",
-          header = "",
-          prefix = "",
+          source = "if_many",
         },
       })
 
-      -- エラーと警告を下線と淡い背景色で表示
+      -- VS Code風の診断配色
       local function set_diagnostic_hl()
-        vim.api.nvim_set_hl(0, "DiagnosticUnderlineError", { underline = true, bg = "#553333", blend = 50 })
-        vim.api.nvim_set_hl(0, "DiagnosticUnderlineWarn", { underline = true, bg = "#333355", blend = 50 })
-        vim.api.nvim_set_hl(0, "DiagnosticUnnecessary", { underline = true, bg = "#333355", blend = 50 })
+        -- エラー（赤）
+        vim.api.nvim_set_hl(0, "DiagnosticError", { fg = "#F14C4C" })
+        vim.api.nvim_set_hl(0, "DiagnosticUnderlineError", { undercurl = true, sp = "#F14C4C" })
+        
+        -- 警告（黄色）
+        vim.api.nvim_set_hl(0, "DiagnosticWarn", { fg = "#CCA700" })
+        vim.api.nvim_set_hl(0, "DiagnosticUnderlineWarn", { undercurl = true, sp = "#CCA700" })
+        
+        -- 情報（青）
+        vim.api.nvim_set_hl(0, "DiagnosticInfo", { fg = "#3794FF" })
+        vim.api.nvim_set_hl(0, "DiagnosticUnderlineInfo", { undercurl = true, sp = "#3794FF" })
+        
+        -- ヒント（緑）
+        vim.api.nvim_set_hl(0, "DiagnosticHint", { fg = "#10B981" })
+        vim.api.nvim_set_hl(0, "DiagnosticUnderlineHint", { undercurl = true, sp = "#10B981" })
+        
+        -- 不要なコード（薄い表示）
+        vim.api.nvim_set_hl(0, "DiagnosticUnnecessary", { fg = "#808080", italic = true })
       end
       set_diagnostic_hl()
       vim.api.nvim_create_autocmd("ColorScheme", { callback = set_diagnostic_hl })
+      
+      -- VS Code風のサインアイコン
+      vim.fn.sign_define("DiagnosticSignError", { text = "●", texthl = "DiagnosticError" })
+      vim.fn.sign_define("DiagnosticSignWarn", { text = "●", texthl = "DiagnosticWarn" })
+      vim.fn.sign_define("DiagnosticSignInfo", { text = "●", texthl = "DiagnosticInfo" })
+      vim.fn.sign_define("DiagnosticSignHint", { text = "●", texthl = "DiagnosticHint" })
 
-      vim.api.nvim_create_autocmd("CursorHold", {
+      vim.api.nvim_create_autocmd({ "CursorHold", "CursorHoldI" }, {
         callback = function()
-          vim.diagnostic.open_float(nil, { focus = false })
+          vim.diagnostic.open_float(0, {
+            scope = "cursor",
+            focus = false,
+            border = "rounded",
+            source = "if_many",
+            close_events = { "BufLeave", "CursorMoved", "InsertEnter", "FocusLost" },
+            severity_sort = true,
+          })
         end,
       })
 
@@ -84,6 +128,7 @@ return {
           vim.keymap.set(mode, lhs, rhs, { buffer = bufnr, silent = true, desc = desc })
         end
 
+        -- 既存のC-n/C-pマッピングをクリア
         pcall(vim.keymap.del, "n", "<C-n>", { buffer = bufnr })
         pcall(vim.keymap.del, "n", "<C-p>", { buffer = bufnr })
 
@@ -92,9 +137,22 @@ return {
         map("n", "gD", vim.lsp.buf.declaration, "LSP: Go to Declaration")
         map("n", "gr", vim.lsp.buf.references, "LSP: References")
         map("n", "gi", vim.lsp.buf.implementation, "LSP: Implementation")
-        map("n", "<C-]>", vim.lsp.buf.definition, "LSP: Go to Definition (Ctrl-])")
-        map("n", "<C-n>", function() vim.diagnostic.jump({ count = 1 }) end, "Diagnostics: Next")
-        map("n", "<C-p>", function() vim.diagnostic.jump({ count = -1 }) end, "Diagnostics: Prev")
+        
+        -- VS Code風のPeek（goto-previewを利用）
+        local ok, goto_preview = pcall(require, "goto-preview")
+        if ok then
+          map("n", "<C-]>", goto_preview.goto_preview_definition, "Peek Definition")
+          map("n", "gR", goto_preview.goto_preview_references, "Peek References")
+          map("n", "gI", goto_preview.goto_preview_implementation, "Peek Implementation")
+          map("n", "<Esc>", goto_preview.close_all_win, "Close Peek windows")
+        else
+          map("n", "<C-]>", vim.lsp.buf.definition, "LSP: Go to Definition (Ctrl-])")
+        end
+        -- 診断ジャンプ（安定化のためnowaitを使わない）
+        local function diag_next() vim.diagnostic.jump({ count = 1 }) end
+        local function diag_prev() vim.diagnostic.jump({ count = -1 }) end
+        map("n", "<C-n>", diag_next, "Diagnostics: Next")
+        map("n", "<C-p>", diag_prev, "Diagnostics: Prev")
         map("n", "]d", function() vim.diagnostic.jump({ count = 1 }) end, "Diagnostics: Next")
         map("n", "[d", function() vim.diagnostic.jump({ count = -1 }) end, "Diagnostics: Prev")
         map("n", ",r", vim.lsp.buf.rename, "LSP: Rename")
@@ -112,72 +170,10 @@ return {
       -- LSPサーバーの設定
       local lspconfig = require("lspconfig")
       local mason_lspconfig = require("mason-lspconfig")
+      local util = require("lspconfig.util")
       
-      -- setup_handlers が存在するか確認
-      if not mason_lspconfig.setup_handlers then
-        -- 古いAPIの場合、手動で設定
-        local installed_servers = mason_lspconfig.get_installed_servers()
-        for _, server_name in ipairs(installed_servers) do
-          if server_name == "lua_ls" then
-            lspconfig.lua_ls.setup({
-              capabilities = capabilities,
-              on_attach = on_attach,
-              settings = {
-                Lua = {
-                  runtime = { version = "LuaJIT" },
-                  diagnostics = { globals = { "vim" } },
-                  workspace = {
-                    library = vim.api.nvim_get_runtime_file("", true),
-                    checkThirdParty = false,
-                  },
-                  telemetry = { enable = false },
-                },
-              },
-            })
-          elseif server_name == "gopls" then
-            lspconfig.gopls.setup({
-              capabilities = capabilities,
-              on_attach = on_attach,
-              settings = {
-                gopls = {
-                  analyses = { unusedparams = true },
-                  staticcheck = true,
-                },
-              },
-            })
-          elseif server_name == "basedpyright" then
-            lspconfig.basedpyright.setup({
-              capabilities = capabilities,
-              on_attach = on_attach,
-              settings = {
-                basedpyright = { disableOrganizeImports = true },
-                python = {
-                  analysis = {
-                    autoSearchPaths = true,
-                    useLibraryCodeForTypes = true,
-                    diagnosticMode = "workspace",
-                  },
-                },
-              },
-            })
-          elseif server_name == "ts_ls" then
-            lspconfig.ts_ls.setup({
-              capabilities = capabilities,
-              on_attach = on_attach,
-            })
-          else
-            -- デフォルト設定
-            if lspconfig[server_name] then
-              lspconfig[server_name].setup({
-                capabilities = capabilities,
-                on_attach = on_attach,
-              })
-            end
-          end
-        end
-      else
-        -- 新しいAPIを使用
-        mason_lspconfig.setup_handlers({
+      -- setup_handlersで一元管理（重複を防ぐ）
+      mason_lspconfig.setup_handlers({
         -- デフォルトハンドラー
         function(server_name)
           lspconfig[server_name].setup({
@@ -211,46 +207,58 @@ return {
           })
         end,
         
-          ["gopls"] = function()
-            lspconfig.gopls.setup({
-              capabilities = capabilities,
-              on_attach = on_attach,
-              settings = {
-                gopls = {
-                  analyses = {
-                    unusedparams = true,
+        ["gopls"] = function()
+          lspconfig.gopls.setup({
+            capabilities = capabilities,
+            on_attach = on_attach,
+            settings = {
+              gopls = {
+                analyses = {
+                  unusedparams = true,
+                },
+                staticcheck = true,
+              },
+            },
+          })
+        end,
+
+        ["basedpyright"] = function()
+          lspconfig.basedpyright.setup({
+            capabilities = capabilities,
+            on_attach = on_attach,
+            root_dir = util.root_pattern("pyproject.toml", "setup.cfg", "requirements.txt", ".git"),
+            settings = {
+              basedpyright = { disableOrganizeImports = true },
+              python = {
+                analysis = {
+                  typeCheckingMode = "basic",
+                  diagnosticSeverityOverrides = {
+                    reportMissingImports = "none",
+                    reportDeprecated = "none",
                   },
-                  staticcheck = true,
+                  autoSearchPaths = true,
+                  useLibraryCodeForTypes = true,
                 },
               },
-            })
-          end,
+            },
+          })
+        end,
 
-          ["basedpyright"] = function()
-            lspconfig.basedpyright.setup({
-              capabilities = capabilities,
-              on_attach = on_attach,
-              settings = {
-                basedpyright = { disableOrganizeImports = true },
-                python = {
-                  analysis = {
-                    autoSearchPaths = true,
-                    useLibraryCodeForTypes = true,
-                    diagnosticMode = "workspace",
-                  },
-                },
-              },
-            })
-          end,
+        ["ruff"] = function()
+          lspconfig.ruff.setup({
+            capabilities = capabilities,
+            on_attach = on_attach,
+            root_dir = util.root_pattern("pyproject.toml", "ruff.toml", ".git"),
+          })
+        end,
 
-          ["ts_ls"] = function()
-            lspconfig.ts_ls.setup({
-              capabilities = capabilities,
-              on_attach = on_attach,
-            })
+        ["ts_ls"] = function()
+          lspconfig.ts_ls.setup({
+            capabilities = capabilities,
+            on_attach = on_attach,
+          })
         end,
       })
-      end
     end,
   },
 
