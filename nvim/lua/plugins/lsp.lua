@@ -17,7 +17,6 @@ return {
     opts = {
       ensure_installed = {
         "lua_ls",        -- Lua
-        "pyright",       -- Python
         "ruff",          -- Python linter
         "gopls",         -- Go
         "ts_ls",         -- TypeScript/JavaScript
@@ -51,7 +50,7 @@ return {
       -- 診断表示の設定
       vim.diagnostic.config({
         virtual_text = false, -- 仮想テキストは非表示（軽量化）
-        signs = true,
+        signs = false,
         underline = true,
         update_in_insert = false,
         severity_sort = true,
@@ -62,13 +61,10 @@ return {
           prefix = "",
         },
       })
-      
-      -- 診断サインをより見やすく
-      local signs = { Error = "✗", Warn = "⚠", Hint = "💡", Info = "ℹ" }
-      for type, icon in pairs(signs) do
-        local hl = "DiagnosticSign" .. type
-        vim.fn.sign_define(hl, { text = icon, texthl = hl, numhl = hl })
-      end
+
+      -- エラーと警告を下線と背景色で表示
+      vim.api.nvim_set_hl(0, "DiagnosticUnderlineError", { underline = true, bg = "#ff0000" })
+      vim.api.nvim_set_hl(0, "DiagnosticUnderlineWarn", { underline = true, bg = "#0000ff" })
 
       -- LSPキーマップ
       local on_attach = function(client, bufnr)
@@ -80,8 +76,12 @@ return {
         vim.keymap.set("n", ",r", vim.lsp.buf.rename, opts)
         vim.keymap.set("n", ",a", vim.lsp.buf.format, opts)
         vim.keymap.set("v", ",a", vim.lsp.buf.format, opts)
-        vim.keymap.set("n", "[d", vim.diagnostic.goto_prev, opts)
-        vim.keymap.set("n", "]d", vim.diagnostic.goto_next, opts)
+        vim.keymap.set("n", "[d", function()
+          vim.diagnostic.goto_prev({})
+        end, opts)
+        vim.keymap.set("n", "]d", function()
+          vim.diagnostic.goto_next({})
+        end, opts)
         vim.keymap.set("n", ",l", "<cmd>Telescope diagnostics<cr>", opts)
         vim.keymap.set("n", ",d", vim.diagnostic.open_float, opts)
         vim.keymap.set("n", ",o", function() 
@@ -116,20 +116,6 @@ return {
                     checkThirdParty = false,
                   },
                   telemetry = { enable = false },
-                },
-              },
-            })
-          elseif server_name == "pyright" then
-            lspconfig.pyright.setup({
-              capabilities = capabilities,
-              on_attach = on_attach,
-              settings = {
-                python = {
-                  analysis = {
-                    autoSearchPaths = true,
-                    diagnosticMode = "workspace",
-                    useLibraryCodeForTypes = true,
-                  },
                 },
               },
             })
@@ -194,22 +180,6 @@ return {
                 },
                 telemetry = {
                   enable = false,
-                },
-              },
-            },
-          })
-        end,
-        
-        ["pyright"] = function()
-          lspconfig.pyright.setup({
-            capabilities = capabilities,
-            on_attach = on_attach,
-            settings = {
-              python = {
-                analysis = {
-                  autoSearchPaths = true,
-                  diagnosticMode = "workspace",
-                  useLibraryCodeForTypes = true,
                 },
               },
             },

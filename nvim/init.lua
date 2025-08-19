@@ -126,6 +126,8 @@ vim.keymap.set("n", "<C-c><C-c>", ":nohlsearch<CR><Esc>", { noremap = true })
 vim.keymap.set("t", "<Esc>", "<C-\\><C-n>", { noremap = true })
 
 -- Diagnostic navigation
+pcall(vim.keymap.del, "n", "<C-n>")
+pcall(vim.keymap.del, "n", "<C-p>")
 vim.keymap.set("n", "<C-n>", function()
   vim.diagnostic.goto_next({ severity = { min = vim.diagnostic.severity.WARN } })
 end, { noremap = true, silent = true, desc = "Next diagnostic" })
