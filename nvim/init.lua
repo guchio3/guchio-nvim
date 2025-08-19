@@ -125,44 +125,12 @@ vim.keymap.set("n", "<C-c><C-c>", ":nohlsearch<CR><Esc>", { noremap = true })
 -- term insert を esc で終了
 vim.keymap.set("t", "<Esc>", "<C-\\><C-n>", { noremap = true })
 
-local function diagnostic_jump(step)
-  local severity = { min = vim.diagnostic.severity.WARN }
-  local diagnostics = vim.diagnostic.get(0, { severity = severity })
-  if #diagnostics == 0 then
-    return
-  end
-  table.sort(diagnostics, function(a, b)
-    if a.lnum == b.lnum then
-      return a.col < b.col
-    end
-    return a.lnum < b.lnum
-  end)
-  local pos = vim.api.nvim_win_get_cursor(0)
-  local target
-  if step > 0 then
-    for _, d in ipairs(diagnostics) do
-      if d.lnum > pos[1] - 1 or (d.lnum == pos[1] - 1 and d.col > pos[2]) then
-        target = d
-        break
-      end
-    end
-    if not target then
-      target = diagnostics[1]
-    end
-  else
-    for i = #diagnostics, 1, -1 do
-      local d = diagnostics[i]
-      if d.lnum < pos[1] - 1 or (d.lnum == pos[1] - 1 and d.col < pos[2]) then
-        target = d
-        break
-      end
-    end
-    if not target then
-      target = diagnostics[#diagnostics]
-    end
-  end
-  vim.api.nvim_win_set_cursor(0, { target.lnum + 1, target.col })
-  vim.diagnostic.open_float(nil, { focus = false })
+local function diagnostic_jump(count)
+  vim.diagnostic.jump({
+    count = count,
+    float = true,
+    severity = { min = vim.diagnostic.severity.WARN },
+  })
 end
 _G.diagnostic_jump = diagnostic_jump
 

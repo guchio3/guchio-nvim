@@ -80,7 +80,16 @@ return {
       -- LSPキーマップ
       local on_attach = function(client, bufnr)
         local opts = { noremap = true, silent = true, buffer = bufnr }
-        
+
+        if client.name == "ruff" then
+          for _, c in ipairs(vim.lsp.get_active_clients({ bufnr = bufnr })) do
+            if c.name == "ruff" and c.id ~= client.id then
+              client.stop()
+              return
+            end
+          end
+        end
+
         vim.keymap.set("n", "K", vim.lsp.buf.hover, opts)
         vim.keymap.set("n", "<C-]>", vim.lsp.buf.definition, opts)
         vim.keymap.set("n", "<C-[>", vim.lsp.buf.references, opts)
@@ -217,13 +226,6 @@ return {
         
         ["ts_ls"] = function()
           lspconfig.ts_ls.setup({
-            capabilities = capabilities,
-            on_attach = on_attach,
-          })
-        end,
-
-        ["ruff"] = function()
-          lspconfig.ruff.setup({
             capabilities = capabilities,
             on_attach = on_attach,
           })
