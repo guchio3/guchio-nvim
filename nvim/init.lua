@@ -26,7 +26,7 @@ vim.opt.timeoutlen = 500  -- マッピングのタイムアウト（ミリ秒）
 vim.opt.ttimeoutlen = 10  -- キーコードのタイムアウト（10msは安全な値）
 vim.opt.cmdheight = 2
 vim.opt.shortmess:append("c")
-vim.opt.signcolumn = "yes"
+vim.opt.signcolumn = "auto"
 
 -- 見た目系
 vim.opt.number = true
@@ -124,6 +124,14 @@ vim.keymap.set("n", ",i", ":LspInfo<CR>", { noremap = true, desc = "Show LSP Inf
 vim.keymap.set("n", "<C-c><C-c>", ":nohlsearch<CR><Esc>", { noremap = true })
 -- term insert を esc で終了
 vim.keymap.set("t", "<Esc>", "<C-\\><C-n>", { noremap = true })
+
+-- Diagnostic navigation
+vim.keymap.set("n", "<C-n>", function()
+  vim.diagnostic.goto_next({ severity = { min = vim.diagnostic.severity.WARN } })
+end, { noremap = true, silent = true, desc = "Next diagnostic" })
+vim.keymap.set("n", "<C-p>", function()
+  vim.diagnostic.goto_prev({ severity = { min = vim.diagnostic.severity.WARN } })
+end, { noremap = true, silent = true, desc = "Prev diagnostic" })
 
 -- カラーテーマ切り替え機能
 vim.api.nvim_create_user_command("ThemeSelect", function()

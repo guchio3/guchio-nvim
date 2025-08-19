@@ -133,7 +133,7 @@ return {
       "nvim-tree/nvim-web-devicons",
     },
     keys = {
-      { "<C-n>", "<cmd>NvimTreeToggle<cr>", desc = "Toggle file tree" },
+      { "<C-e>", "<cmd>NvimTreeToggle<cr>", desc = "Toggle file tree" },
       { ",n", "<cmd>NvimTreeFindFile<cr>", desc = "Find current file in tree" },
     },
     opts = {
@@ -209,7 +209,7 @@ return {
         delete       = { text = '_' },
         topdelete    = { text = '‾' },
         changedelete = { text = '~' },
-        untracked    = { text = '┆' },
+        untracked    = { text = '' },
       },
       signcolumn = true,  -- Sign columnにgit差分を表示
       numhl      = false, -- 行番号のハイライト

@@ -109,11 +109,6 @@ repo = 'cohama/lexima.vim'
 repo = 'scrooloose/nerdtree'
 
 
-# Resize window
-[[plugins]]
-repo = 'simeji/winresizer'
-
-
 #==========================
 #
 #      COLOR SCHEMES
