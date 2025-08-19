@@ -72,7 +72,7 @@ return {
       -- 診断表示の設定
       vim.diagnostic.config({
         virtual_text = false, -- 仮想テキストは非表示（軽量化）
-        signs = true,
+        signs = false,           -- 現状の意図を尊重（必要なら "auto" に）
         underline = true,
         update_in_insert = false,
         severity_sort = true,
@@ -85,10 +85,10 @@ return {
       -- VS Code風の診断配色はafter/plugin/diagnostic_highlight.luaで設定
 
       -- 診断フロート（カーソル位置のみ）
-      vim.api.nvim_create_autocmd({ "CursorHold", "CursorHoldI" }, {
+      vim.api.nvim_create_autocmd("CursorHold", {
         callback = function()
           vim.diagnostic.open_float(0, {
-            scope = "cursor",  -- カーソル位置のみ
+            scope = "cursor",     -- 行全体ではなくカーソル直下
             focus = false,
             border = "rounded",
             source = "if_many",
@@ -100,63 +100,51 @@ return {
 
       -- LSPキーマップ
       local on_attach = function(client, bufnr)
-        local function map(mode, lhs, rhs, desc)
-          vim.keymap.set(mode, lhs, rhs, { buffer = bufnr, silent = true, desc = desc })
-        end
+        local opts = { noremap = true, silent = true, buffer = bufnr }
         
-        -- basedpyright の診断を完全無効化 + 既存診断をリセット
+        -- basedpyright の診断は無効化（Ruff だけ表示）
         if client and client.name == "basedpyright" then
           client.handlers["textDocument/publishDiagnostics"] = function() end
-          -- 既に出ている basedpyright の診断を即時リセット
-          local ns = vim.lsp.diagnostic and vim.lsp.diagnostic.get_namespace and vim.lsp.diagnostic.get_namespace(client.id)
-          if ns then 
-            vim.diagnostic.reset(ns, bufnr)
-          else
-            -- フォールバック: namespace IDで直接リセット
-            vim.diagnostic.reset(client.id, bufnr)
-          end
+          local ns = (vim.lsp.diagnostic and vim.lsp.diagnostic.get_namespace and vim.lsp.diagnostic.get_namespace(client.id))
+          if ns then vim.diagnostic.reset(ns, bufnr) end
         end
 
-        -- グローバルの C-n/C-p を先に削除
+        vim.keymap.set("n", "K", vim.lsp.buf.hover, opts)
+        vim.keymap.set("n", "gd", vim.lsp.buf.definition, opts)
+        vim.keymap.set("n", "gD", vim.lsp.buf.declaration, opts)
+        vim.keymap.set("n", "gi", vim.lsp.buf.implementation, opts)
+        -- 定義/参照: goto-preview があればフロート、無ければフォールバック
+        vim.keymap.set("n", "<C-]>", function()
+          local ok, gp = pcall(require, "goto-preview")
+          if ok and gp.goto_preview_definition then return gp.goto_preview_definition() end
+          return vim.lsp.buf.definition()
+        end, opts)
+        vim.keymap.set("n", "gr", function()
+          local ok, gp = pcall(require, "goto-preview")
+          if ok and gp.goto_preview_references then return gp.goto_preview_references() end
+          return vim.lsp.buf.references()
+        end, opts)
+        
+        vim.keymap.set("n", ",r", vim.lsp.buf.rename, opts)
+        vim.keymap.set("n", ",a", vim.lsp.buf.format, opts)
+        vim.keymap.set("v", ",a", vim.lsp.buf.format, opts)
+        vim.keymap.set("n", ",l", "<cmd>Telescope diagnostics<cr>", opts)
+        vim.keymap.set("n", ",d", vim.diagnostic.open_float, opts)
+        vim.keymap.set("n", ",o", function() vim.lsp.buf.code_action({ context = { only = { "source.organizeImports" } } }) end, opts)
+        
+        -- 診断ジャンプは API を goto_* に統一（重複マップ除去）
+        vim.keymap.set("n", "[d", vim.diagnostic.goto_prev, opts)
+        vim.keymap.set("n", "]d", vim.diagnostic.goto_next, opts)
+        
+        -- 競合回避: まずグローバルを削除 → buffer-local を貼る
         pcall(vim.keymap.del, "n", "<C-n>")
         pcall(vim.keymap.del, "n", "<C-p>")
-
-        map("n", "K", vim.lsp.buf.hover, "LSP: Hover")
-        map("n", "gd", vim.lsp.buf.definition, "LSP: Go to Definition")
-        map("n", "gD", vim.lsp.buf.declaration, "LSP: Go to Declaration")
-        map("n", "gi", vim.lsp.buf.implementation, "LSP: Implementation")
-        
-        -- 定義/参照: goto-preview 優先（無ければフォールバック）
-        map("n", "<C-]>", function()
-          local ok, gp = pcall(require, "goto-preview")
-          if ok and gp.goto_preview_definition then 
-            return gp.goto_preview_definition() 
-          end
-          return vim.lsp.buf.definition()
-        end, "LSP: Peek Definition")
-        
-        map("n", "gr", function()
-          local ok, gp = pcall(require, "goto-preview")
-          if ok and gp.goto_preview_references then 
-            return gp.goto_preview_references() 
-          end
-          return vim.lsp.buf.references()
-        end, "LSP: Peek References")
-        
-        -- 診断ジャンプ（API を goto_* に統一）
-        local function dnext() vim.diagnostic.goto_next({}) end
-        local function dprev() vim.diagnostic.goto_prev({}) end
-        map("n", "<C-n>", dnext, "Diagnostics: Next")
-        map("n", "<C-p>", dprev, "Diagnostics: Prev")
-        map("n", "]d", dnext, "Diagnostics: Next")
-        map("n", "[d", dprev, "Diagnostics: Prev")
-        
-        map("n", ",r", vim.lsp.buf.rename, "LSP: Rename")
-        map("n", ",a", vim.lsp.buf.format, "LSP: Format")
-        map("v", ",a", vim.lsp.buf.format, "LSP: Format")
-        map("n", ",l", "<cmd>Telescope diagnostics<cr>", "Telescope diagnostics")
-        map("n", ",d", vim.diagnostic.open_float, "Diagnostic float")
-        map("n", ",o", function() vim.lsp.buf.code_action({ context = { only = { "source.organizeImports" } } }) end, "Organize Imports")
+        vim.keymap.set("n", "<C-n>", function()
+          vim.diagnostic.goto_next({})
+        end, { buffer = bufnr, noremap = true, silent = true, desc = "Next diagnostic" })
+        vim.keymap.set("n", "<C-p>", function()
+          vim.diagnostic.goto_prev({})
+        end, { buffer = bufnr, noremap = true, silent = true, desc = "Prev diagnostic" })
 
         if client.server_capabilities.semanticTokensProvider then
           client.server_capabilities.semanticTokensProvider = nil
