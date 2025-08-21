@@ -27,7 +27,8 @@ return {
         "jsonls",        -- JSON
         "bashls",        -- Bash
       },
-      automatic_installation = false,  -- Dockerでは事前インストール済み
+      -- disable automatic server enabling to avoid duplicate LSP clients
+      automatic_enable = false,
     },
   },
 
