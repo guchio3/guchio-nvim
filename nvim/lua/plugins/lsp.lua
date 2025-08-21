@@ -1,4 +1,5 @@
--- LSP and completion plugins
+ -- LSP and completion plugins
+ -- luacheck: globals vim
 
 return {
   -- Mason: LSPサーバー管理
@@ -43,7 +44,7 @@ return {
     },
     config = function()
       local capabilities = require("cmp_nvim_lsp").default_capabilities()
-      
+
       -- LspInfoコマンドを作成
       vim.api.nvim_create_user_command("LspInfo", function()
         vim.cmd("checkhealth lsp")
@@ -63,7 +64,7 @@ return {
           prefix = "",
         },
       })
-      
+
       -- 診断サインをより見やすく
       local signs = { Error = "✗", Warn = "⚠", Hint = "💡", Info = "ℹ" }
       for type, icon in pairs(signs) do
@@ -74,7 +75,7 @@ return {
       -- LSPキーマップ
       local on_attach = function(client, bufnr)
         local opts = { noremap = true, silent = true, buffer = bufnr }
-        
+
         vim.keymap.set("n", "K", vim.lsp.buf.hover, opts)
         vim.keymap.set("n", "<C-]>", vim.lsp.buf.definition, opts)
         vim.keymap.set("n", "<C-[>", vim.lsp.buf.references, opts)
@@ -89,167 +90,68 @@ return {
         end, opts)
         vim.keymap.set("n", ",l", "<cmd>Telescope diagnostics<cr>", opts)
         vim.keymap.set("n", ",d", vim.diagnostic.open_float, opts)
-        vim.keymap.set("n", ",o", function() 
-          vim.lsp.buf.code_action({context = {only = {"source.organizeImports"}}}) 
+        vim.keymap.set("n", ",o", function()
+          vim.lsp.buf.code_action({context = {only = {"source.organizeImports"}}})
         end, opts)
-        
+
         -- セマンティックトークンを無効化（パフォーマンス向上）
         if client.server_capabilities.semanticTokensProvider then
           client.server_capabilities.semanticTokensProvider = nil
         end
       end
 
-      -- LSPサーバーの設定
-      local lspconfig = require("lspconfig")
-      local mason_lspconfig = require("mason-lspconfig")
-      
-      -- setup_handlers が存在するか確認
-      if not mason_lspconfig.setup_handlers then
-        -- 古いAPIの場合、手動で設定
-        local installed_servers = mason_lspconfig.get_installed_servers()
-        for _, server_name in ipairs(installed_servers) do
-          if server_name == "lua_ls" then
-            lspconfig.lua_ls.setup({
-              capabilities = capabilities,
-              on_attach = on_attach,
-              settings = {
-                Lua = {
-                  runtime = { version = "LuaJIT" },
-                  diagnostics = { globals = { "vim" } },
-                  workspace = {
-                    library = vim.api.nvim_get_runtime_file("", true),
-                    checkThirdParty = false,
-                  },
-                  telemetry = { enable = false },
-                },
+      -- LSPサーバーの設定 (vim.lsp.config を使用)
+      local lsp = vim.lsp
+      local default_config = {
+        capabilities = capabilities,
+        on_attach = on_attach,
+      }
+
+      local servers = {
+        lua_ls = {
+          settings = {
+            Lua = {
+              runtime = { version = "LuaJIT" },
+              diagnostics = { globals = { "vim" } },
+              workspace = {
+                library = vim.api.nvim_get_runtime_file("", true),
+                checkThirdParty = false,
               },
-            })
-          elseif server_name == "pyright" then
-            lspconfig.pyright.setup({
-              capabilities = capabilities,
-              on_attach = on_attach,
-              settings = {
-                python = {
-                  analysis = {
-                    autoSearchPaths = true,
-                    diagnosticMode = "workspace",
-                    useLibraryCodeForTypes = true,
-                  },
-                },
-              },
-            })
-          elseif server_name == "gopls" then
-            lspconfig.gopls.setup({
-              capabilities = capabilities,
-              on_attach = on_attach,
-              settings = {
-                gopls = {
-                  analyses = { unusedparams = true },
-                  staticcheck = true,
-                },
-              },
-            })
-          elseif server_name == "ruff" then
-            lspconfig.ruff.setup({
-              capabilities = capabilities,
-              on_attach = on_attach,
-            })
-          elseif server_name == "ts_ls" then
-            lspconfig.ts_ls.setup({
-              capabilities = capabilities,
-              on_attach = on_attach,
-            })
-          else
-            -- デフォルト設定
-            if lspconfig[server_name] then
-              lspconfig[server_name].setup({
-                capabilities = capabilities,
-                on_attach = on_attach,
-              })
-            end
-          end
-        end
-      else
-        -- 新しいAPIを使用
-        mason_lspconfig.setup_handlers({
-        -- デフォルトハンドラー
-        function(server_name)
-          lspconfig[server_name].setup({
-            capabilities = capabilities,
-            on_attach = on_attach,
-          })
-        end,
-        
-        -- 特定のサーバー用カスタム設定
-        ["lua_ls"] = function()
-          lspconfig.lua_ls.setup({
-            capabilities = capabilities,
-            on_attach = on_attach,
-            settings = {
-              Lua = {
-                runtime = {
-                  version = "LuaJIT",
-                },
-                diagnostics = {
-                  globals = { "vim" },
-                },
-                workspace = {
-                  library = vim.api.nvim_get_runtime_file("", true),
-                  checkThirdParty = false,
-                },
-                telemetry = {
-                  enable = false,
-                },
+              telemetry = { enable = false },
+            },
+          },
+        },
+        pyright = {
+          settings = {
+            python = {
+              analysis = {
+                autoSearchPaths = true,
+                diagnosticMode = "workspace",
+                useLibraryCodeForTypes = true,
               },
             },
-          })
-        end,
-        
-        ["pyright"] = function()
-          lspconfig.pyright.setup({
-            capabilities = capabilities,
-            on_attach = on_attach,
-            settings = {
-              python = {
-                analysis = {
-                  autoSearchPaths = true,
-                  diagnosticMode = "workspace",
-                  useLibraryCodeForTypes = true,
-                },
-              },
+          },
+        },
+        gopls = {
+          settings = {
+            gopls = {
+              analyses = { unusedparams = true },
+              staticcheck = true,
             },
-          })
-        end,
-        
-        ["gopls"] = function()
-          lspconfig.gopls.setup({
-            capabilities = capabilities,
-            on_attach = on_attach,
-            settings = {
-              gopls = {
-                analyses = {
-                  unusedparams = true,
-                },
-                staticcheck = true,
-              },
-            },
-          })
-        end,
-        
-        ["ruff"] = function()
-          lspconfig.ruff.setup({
-            capabilities = capabilities,
-            on_attach = on_attach,
-          })
-        end,
-        
-        ["ts_ls"] = function()
-          lspconfig.ts_ls.setup({
-            capabilities = capabilities,
-            on_attach = on_attach,
-          })
-        end,
-      })
+          },
+        },
+        ruff = {},
+        ts_ls = {},
+        rust_analyzer = {},
+        dockerls = {},
+        yamlls = {},
+        jsonls = {},
+        bashls = {},
+      }
+
+      for name, config in pairs(servers) do
+        lsp.config(name, vim.tbl_deep_extend("force", default_config, config))
+        lsp.enable(name)
       end
     end,
   },
@@ -270,7 +172,7 @@ return {
     config = function()
       local cmp = require("cmp")
       local luasnip = require("luasnip")
-      
+
       -- friendly-snippetsをロード
       require("luasnip.loaders.from_vscode").lazy_load()
 
