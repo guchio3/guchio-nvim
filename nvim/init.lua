@@ -130,15 +130,13 @@ vim.keymap.set("t", "<Esc>", "<C-\\><C-n>", { noremap = true })
 
 -- Diagnostic navigation
 vim.keymap.set("n", "<C-n>", function()
-  vim.diagnostic.jump({
-    count = 1,
+  vim.diagnostic.goto_next({
     severity = { min = vim.diagnostic.severity.WARN },
     float = true,
   })
 end, { noremap = true, silent = true, desc = "Next diagnostic" })
 vim.keymap.set("n", "<C-p>", function()
-  vim.diagnostic.jump({
-    count = -1,
+  vim.diagnostic.goto_prev({
     severity = { min = vim.diagnostic.severity.WARN },
     float = true,
   })
