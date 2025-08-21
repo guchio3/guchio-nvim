@@ -130,10 +130,18 @@ vim.keymap.set("t", "<Esc>", "<C-\\><C-n>", { noremap = true })
 
 -- Diagnostic navigation
 vim.keymap.set("n", "<C-n>", function()
-  vim.diagnostic.jump({ count = 1, severity = { min = vim.diagnostic.severity.WARN } })
+  vim.diagnostic.jump({
+    count = 1,
+    severity = { min = vim.diagnostic.severity.WARN },
+    float = true,
+  })
 end, { noremap = true, silent = true, desc = "Next diagnostic" })
 vim.keymap.set("n", "<C-p>", function()
-  vim.diagnostic.jump({ count = -1, severity = { min = vim.diagnostic.severity.WARN } })
+  vim.diagnostic.jump({
+    count = -1,
+    severity = { min = vim.diagnostic.severity.WARN },
+    float = true,
+  })
 end, { noremap = true, silent = true, desc = "Prev diagnostic" })
 
 -- カラーテーマ切り替え機能
