@@ -65,6 +65,25 @@ return {
         },
       })
 
+      -- カーソルホールド時に浮動ウィンドウで診断を表示
+      vim.api.nvim_create_autocmd({ "CursorHold", "CursorHoldI" }, {
+        callback = function()
+          vim.diagnostic.open_float(nil, {
+            focusable = false,
+            close_events = {
+              "BufLeave",
+              "CursorMoved",
+              "InsertEnter",
+              "FocusLost",
+            },
+            border = "rounded",
+            source = "always",
+            prefix = "",
+            scope = "cursor",
+          })
+        end,
+      })
+
       -- 診断サインをより見やすく
       local signs = { Error = "✗", Warn = "⚠", Hint = "💡", Info = "ℹ" }
       for type, icon in pairs(signs) do
