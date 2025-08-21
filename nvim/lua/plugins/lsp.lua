@@ -141,6 +141,10 @@ return {
           },
         },
         pyright = {
+          -- Disable pyright diagnostics; use ruff for linting instead
+          handlers = {
+            ["textDocument/publishDiagnostics"] = function() end,
+          },
           settings = {
             python = {
               analysis = {
