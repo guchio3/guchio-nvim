@@ -135,14 +135,14 @@ vim.keymap.set("n", "<C-n>", function()
     severity = { min = vim.diagnostic.severity.WARN },
     float = true,
   })
-end, { noremap = true, silent = true, nowait = true, desc = "Next diagnostic" })
+end, { noremap = true, silent = true, desc = "Next diagnostic" })
 vim.keymap.set("n", "<C-p>", function()
   vim.diagnostic.jump({
     count = -1,
     severity = { min = vim.diagnostic.severity.WARN },
     float = true,
   })
-end, { noremap = true, silent = true, nowait = true, desc = "Prev diagnostic" })
+end, { noremap = true, silent = true, desc = "Prev diagnostic" })
 
 -- カラーテーマ切り替え機能
 vim.api.nvim_create_user_command("ThemeSelect", function()

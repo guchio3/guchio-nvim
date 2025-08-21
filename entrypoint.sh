@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# Disable Neovim log file generation
+export NVIM_LOG_FILE="${NVIM_LOG_FILE:-/dev/null}"
+
 # ユーザー実行時の環境設定
 if [ "$HOME" != "/root" ]; then
     # 設定ファイルへのシンボリックリンクを作成
