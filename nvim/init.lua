@@ -5,6 +5,9 @@
 vim.g.mapleader = ","
 vim.g.maplocalleader = ","
 
+-- Disable creation of .nvimlog in working directories
+vim.env.NVIM_LOG_FILE = "/dev/null"
+
 -- Neovim 0.9+ の高速化設定
 if vim.loader then
   vim.loader.enable()
@@ -127,10 +130,10 @@ vim.keymap.set("t", "<Esc>", "<C-\\><C-n>", { noremap = true })
 
 -- Diagnostic navigation
 vim.keymap.set("n", "<C-n>", function()
-  vim.diagnostic.goto_next({ severity = { min = vim.diagnostic.severity.WARN } })
+  vim.diagnostic.jump({ count = 1, severity = { min = vim.diagnostic.severity.WARN } })
 end, { noremap = true, silent = true, desc = "Next diagnostic" })
 vim.keymap.set("n", "<C-p>", function()
-  vim.diagnostic.goto_prev({ severity = { min = vim.diagnostic.severity.WARN } })
+  vim.diagnostic.jump({ count = -1, severity = { min = vim.diagnostic.severity.WARN } })
 end, { noremap = true, silent = true, desc = "Prev diagnostic" })
 
 -- カラーテーマ切り替え機能
