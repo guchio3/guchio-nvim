@@ -268,8 +268,7 @@ endif
 
 " Use `[g` and `]g` to navigate diagnostics
 " Use `:CocDiagnostics` to get all diagnostics of current buffer in location list.
-nmap <silent> <C-p> <Plug>(coc-diagnostic-prev)
-nmap <silent> <C-n> <Plug>(coc-diagnostic-next)
+" Diagnostic navigation keymaps are handled in init.lua
 
 " Highlight the symbol and its references when holding the cursor.
 autocmd ColorScheme * highlight CocHighlightText ctermbg=238
