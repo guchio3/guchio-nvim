@@ -70,10 +70,9 @@ ENV PATH="$PATH:/root/go/bin"
 FROM lang-tools AS nvim-setup
 
   # Copy configuration files first (for better cache invalidation)
-  # Copy helper scripts (rename the terminfo helper on copy)
-  COPY entrypoint.sh /usr/local/bin/entrypoint.sh
+  # Copy terminfo helper and make it executable
   COPY scripts/ensure_terminfo_uc.sh /usr/local/bin/ensure-terminfo-uc
-  RUN chmod +x /usr/local/bin/entrypoint.sh /usr/local/bin/ensure-terminfo-uc
+  RUN chmod +x /usr/local/bin/ensure-terminfo-uc
 
 # Copy Neovim config
 COPY nvim /root/.config/nvim
@@ -105,4 +104,5 @@ RUN chmod -R 777 /root/.local/state/nvim/shada 2>/dev/null || true
 # Final cleanup
 RUN rm -rf /tmp/* /var/tmp/* ~/.cache/pip
 
-ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
+ENTRYPOINT ["/usr/local/bin/ensure-terminfo-uc"]
+CMD ["nvim"]

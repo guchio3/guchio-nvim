@@ -1,8 +1,15 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+debug() {
+  if [[ "${UC_DEBUG:-0}" != 0 ]]; then
+    echo "[ensure-terminfo-uc] $*" >&2
+  fi
+}
+
 # Current TERM (from host); default to xterm-256color if empty
 CUR_TERM="${TERM:-xterm-256color}"
+debug "current TERM: $CUR_TERM"
 
 # If already '-uc', derive base; else set desired '-uc'
 if [[ "$CUR_TERM" == *-uc ]]; then
@@ -12,18 +19,20 @@ else
   BASE_TERM="$CUR_TERM"
   DERIVED_TERM="${CUR_TERM}-uc"
 fi
+debug "base term: $BASE_TERM, derived term: $DERIVED_TERM"
 
 # If derived entry exists AND has Smulx/Setulc, just switch TERM and run
 if infocmp -x "$DERIVED_TERM" >/dev/null 2>&1 && \
    infocmp -x "$DERIVED_TERM" | grep -q 'Smulx' && \
    infocmp -x "$DERIVED_TERM" | grep -q 'Setulc'; then
+  debug "found existing terminfo for $DERIVED_TERM"
   export TERM="$DERIVED_TERM"
   exec "$@"
 fi
 
 # If base terminfo missing, give up gracefully
 if ! infocmp -x "$BASE_TERM" >/dev/null 2>&1; then
-  echo "[warn] base terminfo '$BASE_TERM' not found; continuing with '$CUR_TERM'" >&2
+  echo "[ensure-terminfo-uc] base terminfo '$BASE_TERM' not found; continuing with '$CUR_TERM'" >&2
   exec "$@"
 fi
 
@@ -36,8 +45,10 @@ ${DERIVED_TERM}|${BASE_TERM} with SGR underline style/color,
 EOF
 
 # Compile to user terminfo dir
+debug "compiling $DERIVED_TERM terminfo"
 tic -x -o "${HOME}/.terminfo" "$tmp" || true
 rm -f "$tmp"
 
 export TERM="$DERIVED_TERM"
+debug "exported TERM=$DERIVED_TERM; exec $*"
 exec "$@"

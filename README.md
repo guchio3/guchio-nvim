@@ -27,10 +27,10 @@ docker run --rm -it \
   -e HOME=/root \
   -e TERM="$TERM" \
   -e COLORTERM=truecolor \
-  -v "$HOME:$HOME" \
-  --workdir="$(pwd)" \
   nvim
 ```
+
+Add `-e UC_DEBUG=1` to print helper logs on startup.
 
 ## Set alias
 
