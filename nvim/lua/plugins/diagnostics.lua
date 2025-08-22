@@ -43,12 +43,13 @@ return {
         },
       })
 
-      -- Palette (works on dark themes)
-      local palette = {
-        error = "#e86671", warn = "#e5c07b", info = "#61afef", hint = "#98c379",
-      }
-      local function sethl(n, s) pcall(vim.api.nvim_set_hl, 0, n, s) end
-      local function apply_hl()
+        -- Palette (works on dark themes)
+        local palette = {
+          error = "#e86671", warn = "#e5c07b", info = "#61afef", hint = "#98c379",
+        }
+        -- Users can opt-out of undercurl via: vim.g.no_undercurl = true
+        local function sethl(n, s) pcall(vim.api.nvim_set_hl, 0, n, s) end
+        local function apply_hl()
         -- no background blocks; just colored text/signs
         sethl("DiagnosticError", { fg = palette.error, bg = "NONE" })
         sethl("DiagnosticWarn",  { fg = palette.warn,  bg = "NONE" })

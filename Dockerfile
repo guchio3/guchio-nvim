@@ -69,9 +69,11 @@ ENV PATH="$PATH:/root/go/bin"
 # ===== Stage 3: Neovim configuration (changes most frequently) =====
 FROM lang-tools AS nvim-setup
 
-# Copy configuration files first (for better cache invalidation)
-COPY entrypoint.sh scripts/ensure_terminfo_uc.sh /usr/local/bin/
-RUN chmod +x /usr/local/bin/entrypoint.sh /usr/local/bin/ensure-terminfo-uc
+  # Copy configuration files first (for better cache invalidation)
+  # Copy helper scripts (rename the terminfo helper on copy)
+  COPY entrypoint.sh /usr/local/bin/entrypoint.sh
+  COPY scripts/ensure_terminfo_uc.sh /usr/local/bin/ensure-terminfo-uc
+  RUN chmod +x /usr/local/bin/entrypoint.sh /usr/local/bin/ensure-terminfo-uc
 
 # Copy Neovim config
 COPY nvim /root/.config/nvim

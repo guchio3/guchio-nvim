@@ -22,15 +22,14 @@ docker build -t nvim .
 ## Run
 
 ```bash
-docker run --rm -it --detach-keys=ctrl-q,ctrl-q \
+docker run --rm -it \
   -u $(id -u):$(id -g) \
   -e HOME=/root \
   -e TERM="$TERM" \
   -e COLORTERM=truecolor \
   -v "$HOME:$HOME" \
   --workdir="$(pwd)" \
-  ghcr.io/guchio3/nvim:latest \
-  /bin/bash -lc 'ensure-terminfo-uc nvim'
+  nvim
 ```
 
 ## Set alias
@@ -47,8 +46,7 @@ nvim() {
     -e COLORTERM=truecolor \
     -v "$HOME:$HOME" \
     --workdir="$(pwd)" \
-    ghcr.io/guchio3/nvim:latest \
-    /bin/bash -lc 'ensure-terminfo-uc nvim "$@"' -- "$@"
+    nvim "$@"
 }
 ```
 
