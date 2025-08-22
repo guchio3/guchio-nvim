@@ -9,6 +9,7 @@ Dockerized Neovim development environment with modern configuration (2025).
 - **Native LSP** with mason.nvim for language server management
 - **Telescope** for fuzzy finding
 - **Treesitter** for better syntax highlighting
+- **glance.nvim** for VS Code–like LSP peek UI
 - Pre-configured for Python, Go, TypeScript, Rust development
 - **uv** for Python package management
 
@@ -78,8 +79,8 @@ See: docker container attach reference, docker config.json man page.
 ### LSP
 
 - `K` - Hover documentation
-- `<C-]>` - Go to definition
-- `<C-[>` - Find references
+- `<C-]>` - VS Code–like floating peek for definition (auto-closes; single result jumps)
+- `<C-[>` - VS Code–like floating peek for references (auto-closes; single result jumps)
 - `,r` - Rename
 - `,a` - Format code
 - `[d` - Previous diagnostic
