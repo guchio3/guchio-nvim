@@ -50,24 +50,9 @@ return {
         vim.cmd("checkhealth lsp")
       end, { desc = "Show LSP information" })
 
-      -- 診断表示の設定
-      vim.diagnostic.config({
-        virtual_text = false, -- 仮想テキストは非表示（軽量化）
-        signs = true,
-        underline = true,
-        update_in_insert = false,
-        severity_sort = true,
-        float = {
-          border = "rounded",
-          source = "always",
-          header = "",
-          prefix = "",
-        },
-      })
-
-      -- カーソルホールド時に浮動ウィンドウで診断を表示
-      vim.api.nvim_create_autocmd({ "CursorHold", "CursorHoldI" }, {
-        callback = function()
+        -- カーソルホールド時に浮動ウィンドウで診断を表示
+        vim.api.nvim_create_autocmd({ "CursorHold", "CursorHoldI" }, {
+          callback = function()
           vim.diagnostic.open_float(nil, {
             focusable = false,
             close_events = {
@@ -84,15 +69,8 @@ return {
         end,
       })
 
-      -- 診断サインをより見やすく
-      local signs = { Error = "✗", Warn = "⚠", Hint = "💡", Info = "ℹ" }
-      for type, icon in pairs(signs) do
-        local hl = "DiagnosticSign" .. type
-        vim.fn.sign_define(hl, { text = icon, texthl = hl, numhl = hl })
-      end
-
-      -- LSPキーマップ
-      local on_attach = function(client, bufnr)
+        -- LSPキーマップ
+        local on_attach = function(client, bufnr)
         local opts = { noremap = true, silent = true, buffer = bufnr }
 
         vim.keymap.set("n", "K", vim.lsp.buf.hover, opts)

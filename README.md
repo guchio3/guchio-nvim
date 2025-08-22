@@ -120,6 +120,13 @@ Available themes:
 - `gruvbox` - Retro style theme
 - `kanagawa` - Japanese-inspired calm theme (wave/dragon/lotus variants)
 
+### Diagnostic UI
+
+Diagnostics now use colored signs and undercurls so errors and warnings stand out without gray blocks.
+Messages appear inline by default, but you can press `,x` to toggle between inline virtual text and multi-line virtual lines.
+A Nerd Font provides the best icons; ASCII characters are used if it's unavailable.
+Some terminals or tmux may render the undercurl as a normal underline, but the signcolumn icons still indicate severity.
+
 ## Configuration
 
 The configuration is written in Lua and located in:
