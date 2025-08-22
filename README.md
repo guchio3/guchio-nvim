@@ -62,6 +62,10 @@ Two solutions:
 
 See: docker container attach reference, docker config.json man page.
 
+### Glance `close` error on `<CR>`
+
+If you see `... attempt to call method 'close' (a nil value)` when pressing `<CR>` in the Glance list, ensure you're on this version. The close is now scheduled and guarded with `is_open()`.
+
 ## Key Mappings
 
 ### General
@@ -79,8 +83,8 @@ See: docker container attach reference, docker config.json man page.
 ### LSP
 
 - `K` - Hover documentation
-- `<C-]>` - VS Code–like floating peek for definition (auto-closes; single result jumps)
-- `<C-[>` - VS Code–like floating peek for references (auto-closes; single result jumps)
+- `<C-]>` - VS Code–like floating peek for definition (auto-closes after jump; single result jumps)
+- `<C-[>` - VS Code–like floating peek for references (auto-closes after jump; ignores current location for single-result jump)
 - `,r` - Rename
 - `,a` - Format code
 - `[d` - Previous diagnostic
