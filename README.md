@@ -126,6 +126,8 @@ Diagnostics now use colored signs and undercurls so errors and warnings stand ou
 Messages appear inline by default, but you can press `,x` to toggle between inline virtual text and multi-line virtual lines.
 A Nerd Font provides the best icons; ASCII characters are used if it's unavailable.
 Some terminals or tmux may render the undercurl as a normal underline, but the signcolumn icons still indicate severity.
+Neovim 0.11+ uses the built-in `virtual_lines`; older versions automatically load `lsp_lines.nvim` as a fallback.
+Set `vim.g.have_nerd_font = true` in your `init.lua` to enable Nerd Font icons; otherwise ASCII icons are used.
 
 ## Configuration
 
