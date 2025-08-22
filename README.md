@@ -21,7 +21,9 @@ docker build -t nvim .
 ## Run
 
 ```bash
-docker run --rm -it -u $(id -u):$(id -g) -e HOME=/root -v $HOME:$HOME --workdir=$(pwd) nvim
+docker run --rm -it --detach-keys=ctrl-q,ctrl-q \
+  -u $(id -u):$(id -g) -e HOME=/root \
+  -v "$HOME:$HOME" --workdir="$(pwd)" nvim
 ```
 
 ## Set alias
@@ -29,23 +31,44 @@ docker run --rm -it -u $(id -u):$(id -g) -e HOME=/root -v $HOME:$HOME --workdir=
 Add to your shell configuration (`.bashrc`, `.zshrc`, etc.):
 
 ```bash
-# nvim Docker wrapper function (with file completion)
 nvim() {
-    docker run --rm -it \
-        -u $(id -u):$(id -g) \
-        -e HOME=/root \
-        -v $HOME:$HOME \
-        --workdir=$(pwd) \
-        nvim "$@"
+  docker run --rm -it \
+    --detach-keys=ctrl-q,ctrl-q \
+    -u $(id -u):$(id -g) \
+    -e HOME=/root \
+    -v "$HOME:$HOME" \
+    --workdir="$(pwd)" \
+    nvim "$@"
 }
 ```
+
+## Troubleshooting
+
+### `Ctrl-p` doesn’t work (Docker detach keys)
+
+Docker’s default detach key sequence is `ctrl-p,ctrl-q`. Pressing only `Ctrl-p`
+makes Docker wait for the next key, so Neovim sees nothing until the next
+keypress. This can look like “first press ignored, second press jumps twice”.
+
+Two solutions:
+
+1. Pass `--detach-keys=ctrl-q,ctrl-q` in `docker run` (shown in the alias).
+2. Set `~/.docker/config.json` with:
+
+   ```json
+   { "detachKeys": "ctrl-q,ctrl-q" }
+   ```
+
+See: docker container attach reference, docker config.json man page.
 
 ## Key Mappings
 
 ### General
+
 - Leader key: `,`
 
 ### File Navigation (Telescope)
+
 - `,f` - Find files
 - `,g` - Live grep
 - `,b` - Buffers
@@ -53,6 +76,7 @@ nvim() {
 - `,r` - Recent files
 
 ### LSP
+
 - `K` - Hover documentation
 - `<C-]>` - Go to definition
 - `<C-[>` - Find references
@@ -69,18 +93,22 @@ nvim() {
 - `,i` - Show LSP server info
 
 ### File Tree
+
 - `<C-e>` - Toggle file tree
 - `,n` - Find current file in tree
 
 ### Comments
+
 - `gcc` - Toggle comment (normal mode)
 - `gc` - Toggle comment (visual mode)
 
 ### UI and Themes
+
 - `,t` - Select color theme (interactive menu)
 - `,p` - Preview markdown files
 
 Available themes:
+
 - `hybrid` - Classic dark theme (default)
 - `tokyonight` - Modern dark theme (night/storm/moon/day variants)
 - `catppuccin` - Pastel color theme (mocha/macchiato/frappe/latte variants)
@@ -90,12 +118,14 @@ Available themes:
 ## Configuration
 
 The configuration is written in Lua and located in:
+
 - `nvim/init.lua` - Main configuration
 - `nvim/lua/plugins/` - Plugin configurations
 
 ## Updating
 
 To update LSP servers and tools:
+
 ```bash
 # Inside the container
 :Mason
