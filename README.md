@@ -24,9 +24,12 @@ docker build -t nvim .
 ```bash
 docker run --rm -it \
   -u $(id -u):$(id -g) \
-  -e HOME=/root \
+  -e HOME="$HOME" \
   -e TERM="$TERM" \
   -e COLORTERM=truecolor \
+  -v "$HOME:$HOME" \
+  -v "$(pwd):$(pwd)" \
+  --workdir="$(pwd)" \
   nvim
 ```
 
@@ -41,10 +44,11 @@ nvim() {
   docker run --rm -it \
     --detach-keys=ctrl-q,ctrl-q \
     -u $(id -u):$(id -g) \
-    -e HOME=/root \
+    -e HOME="$HOME" \
     -e TERM="$TERM" \
     -e COLORTERM=truecolor \
     -v "$HOME:$HOME" \
+    -v "$(pwd):$(pwd)" \
     --workdir="$(pwd)" \
     nvim "$@"
 }
