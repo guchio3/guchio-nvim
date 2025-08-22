@@ -96,8 +96,6 @@ return {
         local opts = { noremap = true, silent = true, buffer = bufnr }
 
         vim.keymap.set("n", "K", vim.lsp.buf.hover, opts)
-        vim.keymap.set("n", "<C-]>", vim.lsp.buf.definition, opts)
-        vim.keymap.set("n", "<C-[>", vim.lsp.buf.references, opts)
         vim.keymap.set("n", ",r", vim.lsp.buf.rename, opts)
         vim.keymap.set("n", ",a", vim.lsp.buf.format, opts)
         vim.keymap.set("v", ",a", vim.lsp.buf.format, opts)
