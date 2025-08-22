@@ -23,8 +23,14 @@ docker build -t nvim .
 
 ```bash
 docker run --rm -it --detach-keys=ctrl-q,ctrl-q \
-  -u $(id -u):$(id -g) -e HOME=/root \
-  -v "$HOME:$HOME" --workdir="$(pwd)" nvim
+  -u $(id -u):$(id -g) \
+  -e HOME=/root \
+  -e TERM="$TERM" \
+  -e COLORTERM=truecolor \
+  -v "$HOME:$HOME" \
+  --workdir="$(pwd)" \
+  ghcr.io/guchio3/nvim:latest \
+  /bin/bash -lc 'ensure-terminfo-uc nvim'
 ```
 
 ## Set alias
@@ -37,11 +43,24 @@ nvim() {
     --detach-keys=ctrl-q,ctrl-q \
     -u $(id -u):$(id -g) \
     -e HOME=/root \
+    -e TERM="$TERM" \
+    -e COLORTERM=truecolor \
     -v "$HOME:$HOME" \
     --workdir="$(pwd)" \
-    nvim "$@"
+    ghcr.io/guchio3/nvim:latest \
+    /bin/bash -lc 'ensure-terminfo-uc nvim "$@"' -- "$@"
 }
 ```
+
+Inside the container, verify that colored undercurls work:
+
+```bash
+echo "$TERM"                                 # -> <your-term>-uc
+infocmp -x "$TERM" | grep -E 'Smulx|Setulc'  # both must match
+printf '\e[4:3m\e[58:2::255:0:0mUNDERCURL RED\e[0m\n'  # red curly underline
+```
+
+This works with or without tmux; the helper derives a `${TERM}-uc` entry at runtime.
 
 ## Troubleshooting
 

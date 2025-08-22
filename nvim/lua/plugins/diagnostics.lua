@@ -59,11 +59,12 @@ return {
         sethl("DiagnosticVirtualTextWarn",  { fg = palette.warn,  bg = "NONE", italic = true })
         sethl("DiagnosticVirtualTextInfo",  { fg = palette.info,  bg = "NONE", italic = true })
         sethl("DiagnosticVirtualTextHint",  { fg = palette.hint,  bg = "NONE", italic = true })
-        -- colored undercurls
-        sethl("DiagnosticUnderlineError", { undercurl = true, sp = palette.error })
-        sethl("DiagnosticUnderlineWarn",  { undercurl = true, sp = palette.warn })
-        sethl("DiagnosticUnderlineInfo",  { undercurl = true, sp = palette.info })
-        sethl("DiagnosticUnderlineHint",  { undercurl = true, sp = palette.hint })
+        -- colored undercurls (fall back to plain underline if disabled)
+        local uc = not vim.g.no_undercurl
+        sethl("DiagnosticUnderlineError", uc and { undercurl = true, sp = palette.error } or { underline = true })
+        sethl("DiagnosticUnderlineWarn",  uc and { undercurl = true, sp = palette.warn }  or { underline = true })
+        sethl("DiagnosticUnderlineInfo",  uc and { undercurl = true, sp = palette.info }  or { underline = true })
+        sethl("DiagnosticUnderlineHint",  uc and { undercurl = true, sp = palette.hint }  or { underline = true })
       end
       apply_hl()
       vim.api.nvim_create_autocmd("ColorScheme", { callback = apply_hl })

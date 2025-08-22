@@ -19,7 +19,7 @@ FROM base AS system-deps
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
         # Base tools
-        locales ca-certificates curl git wget \
+        locales ca-certificates curl git wget ncurses-bin \
         # Build tools
         gcc build-essential \
         libxml2-dev libxslt-dev musl-dev \
@@ -70,8 +70,8 @@ ENV PATH="$PATH:/root/go/bin"
 FROM lang-tools AS nvim-setup
 
 # Copy configuration files first (for better cache invalidation)
-COPY entrypoint.sh /usr/local/bin/entrypoint.sh
-RUN chmod +x /usr/local/bin/entrypoint.sh
+COPY entrypoint.sh scripts/ensure_terminfo_uc.sh /usr/local/bin/
+RUN chmod +x /usr/local/bin/entrypoint.sh /usr/local/bin/ensure-terminfo-uc
 
 # Copy Neovim config
 COPY nvim /root/.config/nvim
