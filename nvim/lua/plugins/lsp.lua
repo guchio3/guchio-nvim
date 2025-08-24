@@ -117,8 +117,8 @@ return {
         end
       end
 
-      -- LSPサーバーの設定 (vim.lsp.config を使用)
-      local lsp = vim.lsp
+      -- LSPサーバーの設定
+      local lspconfig = require("lspconfig")
       local default_config = {
         capabilities = capabilities,
         on_attach = on_attach,
@@ -171,8 +171,7 @@ return {
       }
 
       for name, config in pairs(servers) do
-        lsp.config(name, vim.tbl_deep_extend("force", default_config, config))
-        lsp.enable(name)
+        lspconfig[name].setup(vim.tbl_deep_extend("force", default_config, config))
       end
     end,
   },
