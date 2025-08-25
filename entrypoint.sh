@@ -4,13 +4,18 @@
 export NVIM_LOG_FILE="${NVIM_LOG_FILE:-/dev/null}"
 
 # ユーザー実行時の環境設定
-if [ "$HOME" != "/root" ]; then
+if [ "$(id -u)" -ne 0 ]; then
+    USER_HOME="$(getent passwd "$(id -u)" | cut -d: -f6)"
+    if [ -n "$USER_HOME" ] && [ "$HOME" != "$USER_HOME" ]; then
+        export HOME="$USER_HOME"
+    fi
+
     # 設定ファイルへのシンボリックリンクを作成
     mkdir -p "$HOME/.config"
     if [ ! -e "$HOME/.config/nvim" ]; then
         ln -sf /root/.config/nvim "$HOME/.config/nvim"
     fi
-    
+
     # Masonのデータディレクトリを共有
     mkdir -p "$HOME/.local/share" "$HOME/.local/state"
     if [ ! -e "$HOME/.local/share/nvim" ]; then
@@ -19,7 +24,7 @@ if [ "$HOME" != "/root" ]; then
     if [ ! -e "$HOME/.local/state/nvim" ]; then
         ln -sf /root/.local/state/nvim "$HOME/.local/state/nvim"
     fi
-    
+
     # キャッシュディレクトリを共有
     mkdir -p "$HOME/.cache"
     if [ ! -e "$HOME/.cache/nvim" ]; then
