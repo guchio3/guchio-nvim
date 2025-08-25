@@ -25,6 +25,13 @@ if [ "$HOME" != "/root" ]; then
     if [ ! -e "$HOME/.cache/nvim" ]; then
         ln -sf /root/.cache/nvim "$HOME/.cache/nvim"
     fi
+
+    # Goのモジュールキャッシュとビルドディレクトリを設定
+    mkdir -p "$HOME/go/pkg/mod" "$HOME/.cache/go-build"
+    export GOPATH="$HOME/go"
+    export GOMODCACHE="$HOME/go/pkg/mod"
+    export GOCACHE="$HOME/.cache/go-build"
+    export PATH="$PATH:$GOPATH/bin"
 fi
 
 # Neovimを起動
