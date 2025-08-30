@@ -133,7 +133,7 @@ return {
       "nvim-tree/nvim-web-devicons",
     },
     keys = {
-      { "<C-e>", "<cmd>NvimTreeToggle<cr>", desc = "Toggle file tree" },
+      { "<C-e>", "<cmd>NvimTreeFindFileToggle<cr>", desc = "Toggle file tree" },
       { ",n", "<cmd>NvimTreeFindFile<cr>", desc = "Find current file in tree" },
     },
     opts = {

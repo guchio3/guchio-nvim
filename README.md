@@ -99,7 +99,7 @@ If you see `... attempt to call method 'close' (a nil value)` when pressing `<CR
 
 ### File Tree
 
-- `<C-e>` - Toggle file tree
+- `<C-e>` - Toggle file tree and jump to current file
 - `,n` - Find current file in tree
 
 ### Comments
@@ -111,6 +111,7 @@ If you see `... attempt to call method 'close' (a nil value)` when pressing `<CR
 
 - `,t` - Select color theme (interactive menu)
 - `,p` - Preview markdown files
+- Status line displays file path relative to current directory
 
 Available themes:
 
