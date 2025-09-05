@@ -161,7 +161,10 @@ return {
             },
           },
         },
-        ruff = {},
+        ruff = {
+          root_dir = require("lspconfig.util").root_pattern("pyproject.toml", ".git"),
+          settings = { args = { "--config", "pyproject.toml" } },
+        },
         ts_ls = {},
         rust_analyzer = {},
         dockerls = {},
